@@ -20,6 +20,12 @@
   z-index: 2147483647;
   color: var(--vn-ink);
   font-family: var(--vn-font);
+  opacity: 0.9;
+  transition: opacity 180ms ease;
+}
+
+#vn-root:hover {
+  opacity: 1;
 }
 
 #vn-root.vn-collapsed {
@@ -37,6 +43,10 @@
   width: 260px;
   top: 16px;
   right: 16px;
+  opacity: 0.75;
+}
+
+#vn-root.vn-fullscreen:hover {
   opacity: 1;
 }
 
