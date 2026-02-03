@@ -49,8 +49,9 @@
     },
   };
 
-  const locale = navigator.language && navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
-  const t = STRINGS[locale];
+  const LOCALE_KEY = "vn:locale";
+  let locale = "en";
+  let t = STRINGS[locale];
 
   let videoEl = null;
   let notes = [];
@@ -80,8 +81,11 @@
         </div>
         <div id="vn-list"></div>
         <div id="vn-footer">
+          <div class="vn-footer-left">
+            <button id="vn-lang-toggle">EN</button>
+          </div>
           <div id="vn-status"></div>
-          <div>
+          <div class="vn-footer-right">
             <button id="vn-manage">${t.manage}</button>
             <span id="vn-meta"></span>
           </div>
@@ -104,7 +108,28 @@
     status: root.querySelector("#vn-status"),
     meta: root.querySelector("#vn-meta"),
     manage: root.querySelector("#vn-manage"),
+    langToggle: root.querySelector("#vn-lang-toggle"),
   };
+
+  const applyLocaleToUI = () => {
+    ui.title.textContent = t.title;
+    ui.toggle.textContent = collapsed ? t.expand : t.collapse;
+    ui.add.textContent = t.add;
+    ui.copyAll.textContent = t.copyAll;
+    ui.exportBtn.textContent = t.export;
+    ui.manage.textContent = t.manage;
+    ui.langToggle.textContent = locale === "en" ? "EN" : "CN";
+  };
+
+  const setLocale = (next, { persist = true } = {}) => {
+    locale = next === "zh" ? "zh" : "en";
+    t = STRINGS[locale];
+    if (persist) chrome.storage.local.set({ [LOCALE_KEY]: locale });
+    applyLocaleToUI();
+    renderNotes();
+  };
+
+  applyLocaleToUI();
 
   const setStatus = (msg) => {
     ui.status.textContent = msg;
@@ -450,6 +475,11 @@
     setCollapsed(!collapsed);
   });
 
+  ui.langToggle.addEventListener("click", () => {
+    const next = locale === "en" ? "zh" : "en";
+    setLocale(next);
+  });
+
   let dragState = null;
   let dragMoved = false;
   let suppressClick = false;
@@ -515,6 +545,11 @@
       return;
     }
     if (collapsed) setCollapsed(false);
+  });
+
+  chrome.storage.local.get([LOCALE_KEY], (result) => {
+    const stored = result[LOCALE_KEY];
+    if (stored === "en" || stored === "zh") setLocale(stored, { persist: false });
   });
 
   ui.manage.addEventListener("click", () => {

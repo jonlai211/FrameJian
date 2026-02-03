@@ -221,8 +221,8 @@
 }
 
 #vn-footer {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   font-size: 11px;
   color: var(--vn-muted);
@@ -230,12 +230,19 @@
   margin-top: 6px;
 }
 
-#vn-footer > div {
+.vn-footer-left,
+.vn-footer-right {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-#vn-manage {
+
+#vn-status {
+  min-height: 14px;
+  text-align: center;
+}
+
+#vn-lang-toggle {
   border: none;
   background: transparent;
   color: var(--vn-accent);
@@ -244,6 +251,11 @@
   padding: 0;
 }
 
-#vn-status {
-  min-height: 14px;
+#vn-manage {
+  border: none;
+  background: transparent;
+  color: var(--vn-accent);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
 }
