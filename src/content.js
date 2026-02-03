@@ -459,7 +459,9 @@
 
   ui.copyAll.addEventListener("click", async () => {
     if (!notes.length) return;
-    const lines = notes.map((n) => `[${formatTime(n.t)}] ${n.text}`).join("\n");
+    const header = [videoMeta.title, videoMeta.url].filter(Boolean).join("\n");
+    const body = notes.map((n) => `[${formatTime(n.t)}] ${n.text}`).join("\n");
+    const lines = header ? `${header}\n\n${body}` : body;
     await copyText(lines);
     setStatus(t.copied);
   });
