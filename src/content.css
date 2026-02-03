@@ -75,8 +75,10 @@
 }
 
 #vn-root.vn-collapsed #vn-title {
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
+  text-align: center;
+  width: 100%;
 }
 
 @keyframes vn-rise {
@@ -85,19 +87,21 @@
 }
 
 #vn-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 0 2px 0 10px;
+  padding: 0;
   cursor: grab;
   user-select: none;
 }
 
 #vn-root.vn-collapsed #vn-header {
-  padding: 0 2px 0 10px;
+  display: flex;
+  padding: 0;
   cursor: pointer;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 #vn-root.vn-dragging #vn-header {
@@ -121,10 +125,13 @@
 }
 
 #vn-time {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 12px;
   color: var(--vn-muted);
   min-width: 52px;
-  text-align: right;
+  text-align: center;
 }
 
 #vn-input {
