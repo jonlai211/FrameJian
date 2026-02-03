@@ -50,8 +50,10 @@
   };
 
   const LOCALE_KEY = "vn:locale";
+  const ENABLED_KEY = "vn:enabled";
   let locale = "en";
   let t = STRINGS[locale];
+  let enabled = true;
 
   let videoEl = null;
   let notes = [];
@@ -121,6 +123,11 @@
     ui.exportBtn.textContent = t.export;
     ui.manage.textContent = t.manage;
     ui.langToggle.textContent = locale === "en" ? "EN" : "CN";
+  };
+
+  const setEnabled = (next) => {
+    enabled = next;
+    showRoot(enabled && isVideoPage());
   };
 
   const setLocale = (next, { persist = true } = {}) => {
@@ -551,9 +558,16 @@
     if (collapsed) setCollapsed(false);
   });
 
-  chrome.storage.local.get([LOCALE_KEY], (result) => {
+  chrome.storage.local.get([LOCALE_KEY, ENABLED_KEY], (result) => {
     const stored = result[LOCALE_KEY];
     if (stored === "en" || stored === "zh") setLocale(stored, { persist: false });
+    if (typeof result[ENABLED_KEY] === "boolean") setEnabled(result[ENABLED_KEY]);
+  });
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local") return;
+    if (changes[ENABLED_KEY]) setEnabled(changes[ENABLED_KEY].newValue);
+    if (changes[LOCALE_KEY]) setLocale(changes[LOCALE_KEY].newValue, { persist: false });
   });
 
   ui.manage.addEventListener("click", () => {
@@ -584,7 +598,7 @@
         videoEl = null;
       }
 
-      if (!isVideoPage()) {
+      if (!enabled || !isVideoPage()) {
         showRoot(false);
         return;
       }
@@ -612,7 +626,7 @@
       tick().catch(() => {});
     }, 800);
 
-    if (isVideoPage()) {
+    if (enabled && isVideoPage()) {
       videoEl = await waitForVideo();
       await attach();
       showRoot(true);
