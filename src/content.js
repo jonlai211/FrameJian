@@ -4,7 +4,7 @@
 
   const STRINGS = {
     en: {
-      title: "Video Notes",
+      title: "Notes",
       collapse: "Hide",
       expand: "Show",
       add: "Add",
@@ -112,6 +112,8 @@
   };
 
   const applyLocaleToUI = () => {
+    root.classList.toggle("vn-locale-en", locale === "en");
+    root.classList.toggle("vn-locale-zh", locale === "zh");
     ui.title.textContent = t.title;
     ui.toggle.textContent = collapsed ? t.expand : t.collapse;
     ui.add.textContent = t.add;

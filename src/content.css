@@ -115,6 +115,10 @@
   letter-spacing: 0.3px;
 }
 
+#vn-root.vn-locale-en #vn-title {
+  font-size: 15px;
+}
+
 #vn-toggle {
   border: 1px solid var(--vn-border);
   border-radius: 8px;
