@@ -1,10 +1,45 @@
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+importScripts("gemini-client.js");
+
+const runSummarize = async (tabId, prompt) => {
+  try {
+    const client = new GeminiClient();
+    let lastChunkAt = 0;
+    await client.streamGenerate(prompt, (text) => {
+      // Throttle chunk messages to avoid flooding (max ~10/sec)
+      const now = Date.now();
+      if (now - lastChunkAt < 100) return;
+      lastChunkAt = now;
+      chrome.tabs.sendMessage(tabId, { type: "VN_SUMMARY_CHUNK", text }).catch(() => {});
+    });
+    // Final full text
+    chrome.tabs.sendMessage(tabId, {
+      type: "VN_SUMMARY_DONE",
+      conversationUrl: client.getConversationUrl(),
+    }).catch(() => {});
+  } catch (err) {
+    console.error("[VN] summarize error:", err);
+    chrome.tabs.sendMessage(tabId, {
+      type: "VN_SUMMARY_ERROR",
+      error: err.message,
+    }).catch(() => {});
+  }
+};
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message && message.type === "VN_OPEN_OPTIONS") {
     chrome.runtime.openOptionsPage(() => {
       sendResponse({ ok: true });
     });
     return true;
   }
+
+  if (message && message.type === "VN_SUMMARIZE") {
+    const tabId = sender.tab.id;
+    runSummarize(tabId, message.prompt);
+    sendResponse({ ok: true });
+    return false;
+  }
+
   return false;
 });
 

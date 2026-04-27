@@ -24,6 +24,12 @@
       needText: "Write something first.",
       openFailed: "Open failed",
       missingVideo: "Video not found yet",
+      summarize: "Summarize",
+      summarizing: "Summarizing…",
+      noTranscript: "No captions",
+      summaryFailed: "Summary failed",
+      summaryDone: "Done",
+      notLoggedIn: "Login to gemini.google.com first",
     },
     zh: {
       title: "视频笔记",
@@ -46,6 +52,12 @@
       needText: "先写点内容吧。",
       openFailed: "打开失败",
       missingVideo: "未检测到视频",
+      summarize: "AI 总结",
+      summarizing: "总结中…",
+      noTranscript: "未找到字幕",
+      summaryFailed: "总结失败",
+      summaryDone: "完成",
+      notLoggedIn: "请先登录 gemini.google.com",
     },
   };
 
@@ -62,6 +74,7 @@
   let currentUrl = location.href;
   let collapsed = false;
   let lastCollapsedPos = null;
+  let summarizing = false;
 
   const root = document.createElement("div");
   root.id = "vn-root";
@@ -81,6 +94,8 @@
           <button class="vn-btn" id="vn-copy-all">${t.copyAll}</button>
           <button class="vn-btn" id="vn-export">${t.export}</button>
         </div>
+        <button class="vn-btn" id="vn-summarize">${t.summarize}</button>
+        <div id="vn-summary"></div>
         <div id="vn-list"></div>
         <div id="vn-footer">
           <div class="vn-footer-left">
@@ -111,6 +126,8 @@
     meta: root.querySelector("#vn-meta"),
     manage: root.querySelector("#vn-manage"),
     langToggle: root.querySelector("#vn-lang-toggle"),
+    summarize: root.querySelector("#vn-summarize"),
+    summary: root.querySelector("#vn-summary"),
   };
 
   const applyLocaleToUI = () => {
@@ -123,6 +140,7 @@
     ui.exportBtn.textContent = t.export;
     ui.manage.textContent = t.manage;
     ui.langToggle.textContent = locale === "en" ? "EN" : "CN";
+    if (!summarizing) ui.summarize.textContent = t.summarize;
   };
 
   const setEnabled = (next) => {
@@ -287,7 +305,6 @@
       edit.addEventListener("click", () => {
         const editor = document.createElement("textarea");
         editor.value = note.text;
-        editor.id = "vn-input";
         editor.style.minHeight = "64px";
         item.replaceChild(editor, text);
 
@@ -414,12 +431,16 @@
 
   const waitForVideo = () => {
     return new Promise((resolve) => {
-      const check = () => {
-        const el = findVideo();
-        if (el) return resolve(el);
-        requestAnimationFrame(check);
-      };
-      check();
+      const el = findVideo();
+      if (el) return resolve(el);
+      const observer = new MutationObserver(() => {
+        const found = findVideo();
+        if (found) {
+          observer.disconnect();
+          resolve(found);
+        }
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
     });
   };
 
@@ -574,6 +595,101 @@
     chrome.runtime.sendMessage({ type: "VN_OPEN_OPTIONS" }, (resp) => {
       if (!resp || !resp.ok) setStatus(t.openFailed);
     });
+  });
+
+  const PROMPT_TEMPLATE = `You will rewrite a YouTube video into a "readable version", divided into several sections by content topics. The goal is to allow readers to fully understand what the video is about through reading, as if they were reading a blog post.
+
+Video link: {videoUrl}
+
+Output requirements:
+
+1. Overview
+Summarize the core topic and conclusion of the video in one paragraph.
+
+2. Organize by topics
+- Each section needs to be expanded in detail based on the video content, so I don't need to watch the video again for details. Each section should be at least 500 words.
+- If methods/frameworks/processes appear, rewrite them into clear steps or paragraphs.
+- If there are key numbers, definitions, or quotes, keep the core terms and add annotations in parentheses.
+
+3. Framework & Mindset
+What frameworks & mindsets can be abstracted from the video? Rewrite them into clear steps or paragraphs. Each framework & mindset should be at least 500 words.
+
+Style and constraints:
+- Never over-condense!
+- Don't add new facts; if there are ambiguous statements, maintain the original meaning and note the uncertainty.
+- Keep proper nouns in their original language and provide translations in parentheses (if they appear in the transcription or can be directly translated).
+- Don't reflect requirement-type questions (such as > 500 words).
+- Avoid too much content in one paragraph; break it into multiple logical paragraphs (using bullet points).
+- When referencing specific moments from the video, include the timestamp in [MM:SS] format.
+- Answer in Chinese`;
+
+  const renderSummary = (text) => {
+    ui.summary.innerHTML = "";
+    if (!text) { ui.summary.classList.remove("vn-summary-visible"); return; }
+    ui.summary.classList.add("vn-summary-visible");
+    const parts = text.split(/(\[\d{1,2}:\d{2}(?::\d{2})?\])/g);
+    const frag = document.createDocumentFragment();
+    parts.forEach((part) => {
+      const m = part.match(/^\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]$/);
+      if (m) {
+        const secs = m[3] !== undefined
+          ? +m[1] * 3600 + +m[2] * 60 + +m[3]
+          : +m[1] * 60 + +m[2];
+        const btn = document.createElement("button");
+        btn.className = "vn-ts-link";
+        btn.textContent = part;
+        btn.addEventListener("click", () => {
+          if (videoEl) { videoEl.currentTime = secs; videoEl.play().catch(() => {}); }
+        });
+        frag.appendChild(btn);
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    });
+    ui.summary.appendChild(frag);
+  };
+
+  ui.summarize.addEventListener("click", async () => {
+    if (summarizing) return;
+    if (getPlatform() !== "youtube") { setStatus(t.noTranscript); return; }
+    summarizing = true;
+    ui.summarize.disabled = true;
+    ui.summarize.textContent = t.summarizing;
+    ui.summary.classList.remove("vn-summary-visible");
+    const prompt = PROMPT_TEMPLATE.replace("{videoUrl}", videoMeta.url);
+    chrome.runtime.sendMessage({ type: "VN_SUMMARIZE", prompt }, (resp) => {
+      if (!resp?.ok) {
+        summarizing = false;
+        ui.summarize.disabled = false;
+        ui.summarize.textContent = t.summarize;
+        setStatus(t.summaryFailed);
+      }
+    });
+  });
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === "VN_SUMMARY_CHUNK") {
+      renderSummary(message.text);
+      return;
+    }
+    if (message.type === "VN_SUMMARY_DONE") {
+      summarizing = false;
+      ui.summarize.disabled = false;
+      ui.summarize.textContent = t.summarize;
+      setStatus(t.summaryDone || "");
+      return;
+    }
+    if (message.type === "VN_SUMMARY_ERROR") {
+      summarizing = false;
+      ui.summarize.disabled = false;
+      ui.summarize.textContent = t.summarize;
+      const msg = message.error === "not_logged_in"
+        ? t.notLoggedIn
+        : message.error === "auth_failed"
+        ? t.notLoggedIn
+        : t.summaryFailed;
+      setStatus(msg);
+    }
   });
 
   const init = async () => {

@@ -38,7 +38,7 @@ const downloadText = (text, filename) => {
 const loadAll = () => {
   chrome.storage.local.get(null, (items) => {
     const entries = Object.entries(items)
-      .filter(([key]) => key.startsWith("vn:"))
+      .filter(([key, payload]) => key.startsWith("vn:") && Array.isArray(payload?.notes))
       .map(([key, payload]) => ({ key, payload }))
       .sort((a, b) => (b.payload?.updatedAt || 0) - (a.payload?.updatedAt || 0));
 
