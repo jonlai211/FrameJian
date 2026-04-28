@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Video Notes Overlay",
-  "version": "0.2.0",
-  "description": "Take timestamped notes while watching YouTube or Bilibili. Summarize with Gemini.",
+  "name": "帧笺 FrameJian",
+  "short_name": "帧笺",
+  "version": "0.3.0",
+  "description": "边看边笺，随帧成记 — Annotate any video with timestamped notes and AI summaries.",
   "action": {
-    "default_title": "Video Notes",
+    "default_title": "帧笺 FrameJian",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

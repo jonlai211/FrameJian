@@ -4,19 +4,23 @@
 
   const STRINGS = {
     en: {
-      title: "Notes",
-      collapse: "Hide",
-      expand: "Show",
-      add: "Add",
-      copyAll: "Copy All",
+      title: "FrameJian",
+      collapse: "Collapse",
+      expand: "Expand",
+      tabNotes: "Notes",
+      tabAi: "AI Summary",
+      aiTitle: "AI Summary",
+      aiSubtext: "Gemini reads the video and generates a structured summary with timestamps.",
+      save: "Save",
+      copyAll: "Copy all",
       export: "Export",
       manage: "Manage",
-      empty: "No notes yet.",
+      empty: "No notes yet — start typing.",
+      write: "Note this moment…",
       jump: "Jump",
       copy: "Copy",
       edit: "Edit",
-      save: "Save",
-      cancel: "Cancel",
+      delete: "Delete",
       saved: "Saved",
       updated: "Updated",
       copied: "Copied",
@@ -24,27 +28,33 @@
       needText: "Write something first.",
       openFailed: "Open failed",
       missingVideo: "Video not found yet",
-      summarize: "Summarize",
+      summarize: "Summarize with AI",
       summarizing: "Summarizing…",
-      noTranscript: "No captions",
+      noTranscript: "YouTube only",
       summaryFailed: "Summary failed",
       summaryDone: "Done",
-      notLoggedIn: "Login to gemini.google.com first",
+      notLoggedIn: "Log in to gemini.google.com first",
+      regenSummary: "Regenerate",
+      cancel: "Cancel",
     },
     zh: {
-      title: "视频笔记",
+      title: "帧笺",
       collapse: "收起",
       expand: "展开",
-      add: "记录",
+      tabNotes: "笔记",
+      tabAi: "AI 摘要",
+      aiTitle: "AI 摘要",
+      aiSubtext: "Gemini 会读取视频内容，生成带时间戳的结构化摘要。",
+      save: "保存",
       copyAll: "复制全部",
       export: "导出",
       manage: "管理",
-      empty: "还没有记录。",
+      empty: "还没有记录 — 开始输入吧。",
+      write: "在此处记下这一帧…",
       jump: "跳转",
       copy: "复制",
       edit: "编辑",
-      save: "保存",
-      cancel: "取消",
+      delete: "删除",
       saved: "已保存",
       updated: "已更新",
       copied: "已复制",
@@ -54,14 +64,16 @@
       missingVideo: "未检测到视频",
       summarize: "AI 总结",
       summarizing: "总结中…",
-      noTranscript: "未找到字幕",
+      noTranscript: "仅支持 YouTube",
       summaryFailed: "总结失败",
       summaryDone: "完成",
       notLoggedIn: "请先登录 gemini.google.com",
+      regenSummary: "重新生成",
+      cancel: "取消",
     },
   };
 
-  const LOCALE_KEY = "vn:locale";
+  const LOCALE_KEY  = "vn:locale";
   const ENABLED_KEY = "vn:enabled";
   let locale = "en";
   let t = STRINGS[locale];
@@ -75,34 +87,83 @@
   let collapsed = false;
   let lastCollapsedPos = null;
   let summarizing = false;
+  let currentTab = "notes"; // "notes" | "ai"
+  let summaryText = "";
 
   const root = document.createElement("div");
   root.id = "vn-root";
   root.className = "vn-docked";
 
+  const COLLAPSE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  const SETTINGS_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+
   root.innerHTML = `
     <div id="vn-panel">
       <div id="vn-header">
-        <div id="vn-title">${t.title}</div>
-        <div id="vn-time">--:--</div>
-        <button id="vn-toggle">${t.collapse}</button>
+        <span class="fj-logo"><span class="fj-zhen">笺</span></span>
+        <span id="vn-title">${t.title}</span>
+        <span id="vn-count-badge"></span>
+        <span id="vn-time-pill">--:--</span>
+        <div id="vn-hdr-actions">
+          <button class="fj-ic" id="vn-settings" aria-label="manage">${SETTINGS_SVG}</button>
+          <button class="fj-ic" id="vn-toggle" aria-label="${t.collapse}">${COLLAPSE_SVG}</button>
+        </div>
       </div>
       <div id="vn-body">
-        <textarea id="vn-input" placeholder="..." maxlength="2000"></textarea>
-        <div id="vn-actions">
-          <button class="vn-btn" id="vn-add">${t.add}</button>
-          <button class="vn-btn" id="vn-copy-all">${t.copyAll}</button>
-          <button class="vn-btn" id="vn-export">${t.export}</button>
+        <div id="vn-tabs">
+          <button class="fj-tab active" id="vn-tab-notes">
+            <span class="fj-tab-label">${t.tabNotes}</span> <span class="fj-tab-pill" id="vn-tab-notes-count">0</span>
+          </button>
+          <button class="fj-tab" id="vn-tab-ai">
+            <span class="fj-tab-label">${t.tabAi}</span> <span class="fj-tab-pill">✦</span>
+          </button>
         </div>
-        <button class="vn-btn" id="vn-summarize">${t.summarize}</button>
-        <div id="vn-summary"></div>
-        <div id="vn-list"></div>
-        <div id="vn-footer">
-          <div class="vn-footer-left">
-            <button id="vn-lang-toggle">EN</button>
+
+        <div id="vn-panel-notes">
+          <div id="vn-list"></div>
+          <div id="vn-composer">
+            <div class="fj-composer-wrap">
+              <span class="fj-ts-now" id="vn-input-ts"></span>
+              <textarea id="vn-input" placeholder="${t.write}" maxlength="2000"></textarea>
+            </div>
+            <div id="vn-composer-bar">
+              <span class="fj-kbd-hint"><kbd>⌘</kbd><kbd>↵</kbd></span>
+              <button class="fj-act-btn" id="vn-copy-all">${t.copyAll}</button>
+              <button class="fj-act-btn" id="vn-export">${t.export}</button>
+              <button class="fj-save-btn" id="vn-add">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span id="vn-save-text">${t.save}</span>
+              </button>
+            </div>
           </div>
+        </div>
+
+        <div id="vn-panel-ai">
+          <div id="vn-ai-empty">
+            <div class="fj-ai-spark">✦</div>
+            <div class="fj-ai-h">${t.aiTitle}</div>
+            <div class="fj-ai-sub">${t.aiSubtext}</div>
+            <button id="vn-summarize">✦ <span id="vn-summarize-label">${t.summarize}</span></button>
+          </div>
+          <div id="vn-ai-loading">
+            <div class="fj-skel long"></div>
+            <div class="fj-skel"></div>
+            <div class="fj-skel short"></div>
+            <div class="fj-skel long"></div>
+            <div class="fj-skel short"></div>
+          </div>
+          <div id="vn-summary"></div>
+          <div id="vn-ai-actions">
+            <button class="fj-ai-btn primary" id="vn-ai-export">导出 Markdown</button>
+            <button class="fj-ai-btn" id="vn-ai-copy">${t.copy}</button>
+            <button class="fj-ai-btn" id="vn-ai-regen">${t.regenSummary}</button>
+          </div>
+        </div>
+
+        <div id="vn-footer">
+          <button id="vn-lang-toggle">EN</button>
           <div id="vn-status"></div>
-          <div class="vn-footer-right">
+          <div class="fj-foot-r">
             <button id="vn-manage">${t.manage}</button>
             <span id="vn-meta"></span>
           </div>
@@ -111,36 +172,95 @@
     </div>
   `;
 
+  // Inject Google Fonts via <link> instead of @import (avoids YouTube CSP blocking)
+  if (!document.querySelector("#vn-gfonts")) {
+    const link = document.createElement("link");
+    link.id   = "vn-gfonts";
+    link.rel  = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@900&family=JetBrains+Mono:wght@500;600&display=swap";
+    document.head.appendChild(link);
+  }
+
   document.documentElement.appendChild(root);
 
   const ui = {
-    title: root.querySelector("#vn-title"),
-    time: root.querySelector("#vn-time"),
-    toggle: root.querySelector("#vn-toggle"),
-    input: root.querySelector("#vn-input"),
-    add: root.querySelector("#vn-add"),
-    copyAll: root.querySelector("#vn-copy-all"),
-    exportBtn: root.querySelector("#vn-export"),
-    list: root.querySelector("#vn-list"),
-    status: root.querySelector("#vn-status"),
-    meta: root.querySelector("#vn-meta"),
-    manage: root.querySelector("#vn-manage"),
-    langToggle: root.querySelector("#vn-lang-toggle"),
-    summarize: root.querySelector("#vn-summarize"),
-    summary: root.querySelector("#vn-summary"),
+    title:           root.querySelector("#vn-title"),
+    countBadge:      root.querySelector("#vn-count-badge"),
+    timePill:        root.querySelector("#vn-time-pill"),
+    toggle:          root.querySelector("#vn-toggle"),
+    settings:        root.querySelector("#vn-settings"),
+    tabNotes:        root.querySelector("#vn-tab-notes"),
+    tabAi:           root.querySelector("#vn-tab-ai"),
+    tabNotesCount:   root.querySelector("#vn-tab-notes-count"),
+    panelNotes:      root.querySelector("#vn-panel-notes"),
+    panelAi:         root.querySelector("#vn-panel-ai"),
+    list:            root.querySelector("#vn-list"),
+    inputTs:         root.querySelector("#vn-input-ts"),
+    input:           root.querySelector("#vn-input"),
+    add:             root.querySelector("#vn-add"),
+    saveText:        root.querySelector("#vn-save-text"),
+    copyAll:         root.querySelector("#vn-copy-all"),
+    exportBtn:       root.querySelector("#vn-export"),
+    aiEmpty:         root.querySelector("#vn-ai-empty"),
+    aiLoading:       root.querySelector("#vn-ai-loading"),
+    summarize:       root.querySelector("#vn-summarize"),
+    summarizeLabel:  root.querySelector("#vn-summarize-label"),
+    summary:         root.querySelector("#vn-summary"),
+    aiActions:       root.querySelector("#vn-ai-actions"),
+    aiExport:        root.querySelector("#vn-ai-export"),
+    aiCopy:          root.querySelector("#vn-ai-copy"),
+    aiRegen:         root.querySelector("#vn-ai-regen"),
+    status:          root.querySelector("#vn-status"),
+    meta:            root.querySelector("#vn-meta"),
+    manage:          root.querySelector("#vn-manage"),
+    langToggle:      root.querySelector("#vn-lang-toggle"),
   };
+
+  // ── Tab switching ─────────────────────────────────────────
+
+  const switchTab = (tab) => {
+    currentTab = tab;
+    ui.tabNotes.classList.toggle("active", tab === "notes");
+    ui.tabAi.classList.toggle("active", tab === "ai");
+    ui.panelNotes.style.display = tab === "notes" ? "" : "none";
+    ui.panelAi.classList.toggle("active", tab === "ai");
+  };
+
+  ui.tabNotes.addEventListener("click", () => switchTab("notes"));
+  ui.tabAi.addEventListener("click", () => switchTab("ai"));
+
+  // ── AI panel state ────────────────────────────────────────
+
+  const setAiState = (state) => {
+    // state: "empty" | "loading" | "done"
+    ui.aiEmpty.style.display    = state === "empty"   ? "" : "none";
+    ui.aiLoading.classList.toggle("visible", state === "loading");
+    ui.aiActions.classList.toggle("visible", state === "done");
+    if (state !== "done") ui.summary.classList.remove("vn-summary-visible");
+  };
+
+  setAiState("empty");
+
+  // ── Locale ────────────────────────────────────────────────
 
   const applyLocaleToUI = () => {
     root.classList.toggle("vn-locale-en", locale === "en");
     root.classList.toggle("vn-locale-zh", locale === "zh");
-    ui.title.textContent = t.title;
-    ui.toggle.textContent = collapsed ? t.expand : t.collapse;
-    ui.add.textContent = t.add;
-    ui.copyAll.textContent = t.copyAll;
-    ui.exportBtn.textContent = t.export;
-    ui.manage.textContent = t.manage;
-    ui.langToggle.textContent = locale === "en" ? "EN" : "CN";
-    if (!summarizing) ui.summarize.textContent = t.summarize;
+    ui.title.textContent       = t.title;
+    ui.tabNotes.querySelector(".fj-tab-label").textContent = t.tabNotes;
+    ui.tabAi.querySelector(".fj-tab-label").textContent    = t.tabAi;
+    ui.saveText.textContent    = t.save;
+    ui.copyAll.textContent     = t.copyAll;
+    ui.exportBtn.textContent   = t.export;
+    ui.manage.textContent      = t.manage;
+    ui.langToggle.textContent  = locale === "en" ? "EN" : "中";
+    ui.input.placeholder       = t.write;
+    if (!summarizing) ui.summarizeLabel.textContent = t.summarize;
+    // Update AI sub text
+    root.querySelector(".fj-ai-h").textContent  = t.aiTitle;
+    root.querySelector(".fj-ai-sub").textContent = t.aiSubtext;
+    ui.aiCopy.textContent  = t.copy;
+    ui.aiRegen.textContent = t.regenSummary;
   };
 
   const setEnabled = (next) => {
@@ -158,13 +278,15 @@
 
   applyLocaleToUI();
 
+  // ── Status ────────────────────────────────────────────────
+
   const setStatus = (msg) => {
     ui.status.textContent = msg;
     if (statusTimer) clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => {
-      ui.status.textContent = "";
-    }, 1400);
+    statusTimer = setTimeout(() => { ui.status.textContent = ""; }, 1600);
   };
+
+  // ── Helpers ───────────────────────────────────────────────
 
   const formatTime = (seconds) => {
     const total = Math.max(0, Math.floor(seconds || 0));
@@ -200,145 +322,17 @@
       if (location.hostname.includes("youtu.be")) return true;
       return location.pathname.startsWith("/watch");
     }
-    if (platform === "bilibili") {
-      return location.pathname.includes("/video/");
-    }
+    if (platform === "bilibili") return location.pathname.includes("/video/");
     return false;
   };
 
   const storageKey = () => `vn:${videoMeta.platform}:${videoMeta.id}`;
 
-  const loadNotes = async () => {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([storageKey()], (result) => {
-        const payload = result[storageKey()];
-        if (payload && Array.isArray(payload.notes)) {
-          notes = payload.notes;
-        } else {
-          notes = [];
-        }
-        resolve();
-      });
-    });
-  };
-
-  const saveNotes = async () => {
-    return new Promise((resolve) => {
-      const payload = {
-        title: videoMeta.title,
-        url: videoMeta.url,
-        platform: videoMeta.platform,
-        id: videoMeta.id,
-        notes,
-        updatedAt: Date.now(),
-      };
-      chrome.storage.local.set({ [storageKey()]: payload }, resolve);
-    });
-  };
-
-  const renderNotes = () => {
-    ui.list.innerHTML = "";
-    if (!notes.length) {
-      const empty = document.createElement("div");
-      empty.className = "vn-item";
-      empty.textContent = t.empty;
-      ui.list.appendChild(empty);
-      return;
-    }
-
-    notes.forEach((note, idx) => {
-      const item = document.createElement("div");
-      item.className = "vn-item";
-
-      const time = document.createElement("div");
-      time.className = "vn-item-time";
-      time.textContent = `${formatTime(note.t)} · ${new Date(note.createdAt).toLocaleString()}`;
-
-      const text = document.createElement("div");
-      text.className = "vn-item-text";
-      text.textContent = note.text;
-
-      const actions = document.createElement("div");
-      actions.className = "vn-item-actions";
-
-      const jump = document.createElement("button");
-      jump.className = "vn-link";
-      jump.textContent = t.jump;
-      jump.addEventListener("click", () => {
-        if (videoEl) {
-          videoEl.currentTime = note.t;
-          videoEl.play().catch(() => {});
-        }
-      });
-
-      const copy = document.createElement("button");
-      copy.className = "vn-link";
-      copy.textContent = t.copy;
-      copy.addEventListener("click", async () => {
-        await copyText(`[${formatTime(note.t)}] ${note.text}`);
-        setStatus(t.copied);
-      });
-
-      const edit = document.createElement("button");
-      edit.className = "vn-link";
-      edit.textContent = t.edit;
-
-      const del = document.createElement("button");
-      del.className = "vn-link";
-      del.textContent = "×";
-      del.setAttribute("aria-label", "delete");
-      del.addEventListener("click", async () => {
-        notes.splice(idx, 1);
-        await saveNotes();
-        renderNotes();
-      });
-
-      actions.appendChild(jump);
-      actions.appendChild(copy);
-      actions.appendChild(edit);
-      actions.appendChild(del);
-      item.appendChild(time);
-      item.appendChild(text);
-      item.appendChild(actions);
-      ui.list.appendChild(item);
-
-      edit.addEventListener("click", () => {
-        const editor = document.createElement("textarea");
-        editor.value = note.text;
-        editor.style.minHeight = "64px";
-        item.replaceChild(editor, text);
-
-        const save = document.createElement("button");
-        save.className = "vn-link";
-        save.textContent = t.save;
-
-        const cancel = document.createElement("button");
-        cancel.className = "vn-link";
-        cancel.textContent = t.cancel;
-
-        actions.innerHTML = "";
-        actions.appendChild(save);
-        actions.appendChild(cancel);
-
-        save.addEventListener("click", async () => {
-          note.text = editor.value.trim();
-          await saveNotes();
-          renderNotes();
-          setStatus(t.updated);
-        });
-
-        cancel.addEventListener("click", () => {
-          renderNotes();
-        });
-      });
-    });
-  };
-
   const copyText = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
       return true;
-    } catch (err) {
+    } catch {
       const area = document.createElement("textarea");
       area.value = text;
       area.style.position = "fixed";
@@ -351,43 +345,156 @@
     }
   };
 
-  const exportNotes = () => {
-    const lines = [];
-    lines.push(`# ${videoMeta.title || "Untitled"}`);
-    lines.push(videoMeta.url);
-    lines.push("");
-    notes.forEach((note) => {
-      lines.push(`- [${formatTime(note.t)}] ${note.text}`);
+  // ── Storage ───────────────────────────────────────────────
+
+  const loadNotes = async () => {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([storageKey()], (result) => {
+        const payload = result[storageKey()];
+        notes = payload && Array.isArray(payload.notes) ? payload.notes : [];
+        resolve();
+      });
     });
-    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const safeTitle = (videoMeta.title || "notes").replace(/[^a-zA-Z0-9_-]+/g, "-");
-    a.href = url;
-    a.download = `${safeTitle || "notes"}.md`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   };
+
+  const saveNotes = async () => {
+    return new Promise((resolve) => {
+      chrome.storage.local.set({
+        [storageKey()]: {
+          title: videoMeta.title,
+          url: videoMeta.url,
+          platform: videoMeta.platform,
+          id: videoMeta.id,
+          notes,
+          updatedAt: Date.now(),
+        },
+      }, resolve);
+    });
+  };
+
+  // ── Render notes ──────────────────────────────────────────
+
+  const renderNotes = () => {
+    const count = notes.length;
+    ui.tabNotesCount.textContent = String(count);
+    ui.countBadge.textContent = String(count);
+    ui.countBadge.classList.toggle("visible", count > 0);
+
+    ui.list.innerHTML = "";
+
+    if (!count) {
+      const empty = document.createElement("div");
+      empty.className = "fj-note-empty";
+      empty.innerHTML = `<div class="fj-note-empty-icon">∅</div><div class="fj-note-empty-text">${t.empty}</div>`;
+      ui.list.appendChild(empty);
+      return;
+    }
+
+    notes.forEach((note, idx) => {
+      const item = document.createElement("div");
+      item.className = "fj-note";
+
+      const tsBtn = document.createElement("button");
+      tsBtn.className = "fj-note-ts";
+      tsBtn.textContent = formatTime(note.t);
+      tsBtn.title = t.jump;
+      tsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (videoEl) { videoEl.currentTime = note.t; videoEl.play().catch(() => {}); }
+      });
+
+      const body = document.createElement("div");
+      body.className = "fj-note-body";
+      body.textContent = note.text;
+
+      const more = document.createElement("button");
+      more.className = "fj-note-more";
+      more.textContent = "⋯";
+      more.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const existing = item.querySelector(".fj-note-acts");
+        if (existing) { existing.remove(); return; }
+        const acts = document.createElement("div");
+        acts.className = "fj-note-acts";
+
+        const mkBtn = (label, cls, handler) => {
+          const b = document.createElement("button");
+          b.className = "fj-note-act" + (cls ? " " + cls : "");
+          b.textContent = label;
+          b.addEventListener("click", (ev) => { ev.stopPropagation(); handler(); });
+          return b;
+        };
+
+        acts.appendChild(mkBtn(t.jump, "", () => {
+          if (videoEl) { videoEl.currentTime = note.t; videoEl.play().catch(() => {}); }
+        }));
+
+        acts.appendChild(mkBtn(t.copy, "", async () => {
+          await copyText(`[${formatTime(note.t)}] ${note.text}`);
+          setStatus(t.copied);
+          acts.remove();
+        }));
+
+        acts.appendChild(mkBtn(t.edit, "", () => {
+          acts.remove();
+          body.style.display = "none";
+          const editor = document.createElement("textarea");
+          editor.className = "fj-note-edit-area";
+          editor.value = note.text;
+          item.insertBefore(editor, more);
+
+          const editActs = document.createElement("div");
+          editActs.className = "fj-note-acts";
+
+          const saveBtn = mkBtn(t.save, "", async () => {
+            const val = editor.value.trim();
+            if (val) { note.text = val; await saveNotes(); }
+            renderNotes();
+            setStatus(t.updated);
+          });
+
+          const cancelBtn = mkBtn(t.cancel || "Cancel", "", () => {
+            editor.remove();
+            editActs.remove();
+            body.style.display = "";
+          });
+
+          editActs.appendChild(saveBtn);
+          editActs.appendChild(cancelBtn);
+          item.appendChild(editActs);
+          editor.focus();
+        }));
+
+        acts.appendChild(mkBtn(t.delete, "danger", async () => {
+          notes.splice(idx, 1);
+          await saveNotes();
+          renderNotes();
+        }));
+
+        item.appendChild(acts);
+      });
+
+      item.appendChild(tsBtn);
+      item.appendChild(body);
+      item.appendChild(more);
+      ui.list.appendChild(item);
+    });
+  };
+
+  // ── Time update ───────────────────────────────────────────
 
   const updateTime = () => {
     if (!videoEl) {
-      ui.time.textContent = "--:--";
+      ui.timePill.textContent = "--:--";
+      ui.inputTs.textContent  = "";
       return;
     }
-    ui.time.textContent = formatTime(videoEl.currentTime);
+    const ts = formatTime(videoEl.currentTime);
+    ui.timePill.textContent = ts;
+    ui.inputTs.textContent  = ts;
   };
 
-  const updateMode = () => {
-    const isFullscreen = !!document.fullscreenElement;
-    root.classList.toggle("vn-fullscreen", isFullscreen);
-    root.classList.toggle("vn-docked", !isFullscreen);
-    const host = document.fullscreenElement || document.documentElement;
-    if (root.parentElement !== host) {
-      host.appendChild(root);
-    }
-  };
+  // ── Platform / meta ───────────────────────────────────────
 
   const normalizeUrl = () => {
     if (videoMeta.platform === "bilibili") {
@@ -399,8 +506,7 @@
         const id = location.pathname.replace("/", "");
         return id ? `https://youtu.be/${id}` : location.href.split("#")[0];
       }
-      const params = new URLSearchParams(location.search);
-      const id = params.get("v");
+      const id = new URLSearchParams(location.search).get("v");
       return id ? `https://www.youtube.com/watch?v=${id}` : location.href.split("#")[0];
     }
     return location.href.split("#")[0];
@@ -409,12 +515,12 @@
   const syncMeta = () => {
     const platform = getPlatform();
     videoMeta.platform = platform;
-    videoMeta.id = getVideoId(platform);
-    videoMeta.url = normalizeUrl();
-    videoMeta.title = document.title.replace(" - YouTube", "").replace("_哔哩哔哩_bilibili", "");
-    if (videoMeta.platform === "bilibili") ui.meta.textContent = "Bilibili";
-    else if (videoMeta.platform === "youtube") ui.meta.textContent = "YouTube";
-    else ui.meta.textContent = "";
+    videoMeta.id       = getVideoId(platform);
+    videoMeta.url      = normalizeUrl();
+    videoMeta.title    = document.title.replace(" - YouTube", "").replace("_哔哩哔哩_bilibili", "");
+    if (platform === "bilibili")      ui.meta.textContent = "Bilibili";
+    else if (platform === "youtube")  ui.meta.textContent = "YouTube";
+    else                              ui.meta.textContent = "";
   };
 
   const attach = async () => {
@@ -424,25 +530,21 @@
     updateTime();
   };
 
-  const findVideo = () => {
-    const el = document.querySelector("video");
-    return el || null;
-  };
+  // ── Video detection ───────────────────────────────────────
 
-  const waitForVideo = () => {
-    return new Promise((resolve) => {
-      const el = findVideo();
-      if (el) return resolve(el);
-      const observer = new MutationObserver(() => {
-        const found = findVideo();
-        if (found) {
-          observer.disconnect();
-          resolve(found);
-        }
-      });
-      observer.observe(document.documentElement, { childList: true, subtree: true });
+  const findVideo = () => document.querySelector("video") || null;
+
+  const waitForVideo = () => new Promise((resolve) => {
+    const el = findVideo();
+    if (el) return resolve(el);
+    const obs = new MutationObserver(() => {
+      const found = findVideo();
+      if (found) { obs.disconnect(); resolve(found); }
     });
-  };
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+  });
+
+  // ── Collapsed state ───────────────────────────────────────
 
   const setCollapsed = (next) => {
     if (collapsed && !next) {
@@ -451,99 +553,41 @@
     }
     collapsed = next;
     root.classList.toggle("vn-collapsed", collapsed);
-    ui.toggle.textContent = collapsed ? t.expand : t.collapse;
     if (collapsed && lastCollapsedPos) {
-      root.style.left = `${lastCollapsedPos.left}px`;
-      root.style.top = `${lastCollapsedPos.top}px`;
+      root.style.left  = `${lastCollapsedPos.left}px`;
+      root.style.top   = `${lastCollapsedPos.top}px`;
       root.style.right = "auto";
     } else if (!collapsed) {
-      requestAnimationFrame(() => {
-        clampToViewport();
-      });
+      requestAnimationFrame(clampToViewport);
     }
   };
 
-  const showRoot = (show) => {
-    root.style.display = show ? "block" : "none";
-  };
+  const showRoot = (show) => { root.style.display = show ? "block" : "none"; };
 
-  ui.add.addEventListener("click", async () => {
-    const text = ui.input.value.trim();
-    if (!text) {
-      setStatus(t.needText);
-      return;
-    }
-    const entry = {
-      t: videoEl ? videoEl.currentTime : 0,
-      text,
-      createdAt: Date.now(),
-    };
-    notes.unshift(entry);
-    ui.input.value = "";
-    await saveNotes();
-    renderNotes();
-    setStatus(t.saved);
-  });
+  // ── Viewport clamping + drag ──────────────────────────────
 
-  ui.copyAll.addEventListener("click", async () => {
-    if (!notes.length) return;
-    const header = [videoMeta.title, videoMeta.url].filter(Boolean).join("\n");
-    const body = notes.map((n) => `[${formatTime(n.t)}] ${n.text}`).join("\n");
-    const lines = header ? `${header}\n\n${body}` : body;
-    await copyText(lines);
-    setStatus(t.copied);
-  });
-
-  ui.exportBtn.addEventListener("click", () => {
-    if (!notes.length) return;
-    exportNotes();
-    setStatus(t.exported);
-  });
-
-  document.addEventListener("fullscreenchange", updateMode);
-
-  ui.toggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setCollapsed(!collapsed);
-  });
-
-  ui.langToggle.addEventListener("click", () => {
-    const next = locale === "en" ? "zh" : "en";
-    setLocale(next);
-  });
-
-  let dragState = null;
-  let dragMoved = false;
-  let suppressClick = false;
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   const clampToViewport = () => {
     const rect = root.getBoundingClientRect();
-    const maxLeft = window.innerWidth - rect.width - 6;
-    const maxTop = window.innerHeight - rect.height - 6;
-    const nextLeft = clamp(rect.left, 6, Math.max(6, maxLeft));
-    const nextTop = clamp(rect.top, 6, Math.max(6, maxTop));
-    root.style.left = `${nextLeft}px`;
-    root.style.top = `${nextTop}px`;
+    const maxL = window.innerWidth  - rect.width  - 6;
+    const maxT = window.innerHeight - rect.height - 6;
+    root.style.left  = `${clamp(rect.left, 6, Math.max(6, maxL))}px`;
+    root.style.top   = `${clamp(rect.top,  6, Math.max(6, maxT))}px`;
     root.style.right = "auto";
   };
 
-  const onDragMove = (event) => {
+  let dragState = null, suppressClick = false;
+
+  const onDragMove = (e) => {
     if (!dragState) return;
-    const dx = event.clientX - dragState.startX;
-    const dy = event.clientY - dragState.startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      dragMoved = true;
-      suppressClick = true;
-    }
-    const width = root.offsetWidth;
-    const height = root.offsetHeight;
-    const maxLeft = window.innerWidth - width - 6;
-    const maxTop = window.innerHeight - height - 6;
-    const nextLeft = clamp(dragState.startLeft + dx, 6, Math.max(6, maxLeft));
-    const nextTop = clamp(dragState.startTop + dy, 6, Math.max(6, maxTop));
-    root.style.left = `${nextLeft}px`;
-    root.style.top = `${nextTop}px`;
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) suppressClick = true;
+    const maxL = window.innerWidth  - root.offsetWidth  - 6;
+    const maxT = window.innerHeight - root.offsetHeight - 6;
+    root.style.left  = `${clamp(dragState.startLeft + dx, 6, Math.max(6, maxL))}px`;
+    root.style.top   = `${clamp(dragState.startTop  + dy, 6, Math.max(6, maxT))}px`;
     root.style.right = "auto";
   };
 
@@ -552,50 +596,82 @@
     dragState = null;
     root.classList.remove("vn-dragging");
     window.removeEventListener("pointermove", onDragMove);
-    window.removeEventListener("pointerup", onDragEnd);
+    window.removeEventListener("pointerup",   onDragEnd);
   };
 
-  root.querySelector("#vn-header").addEventListener("pointerdown", (event) => {
-    const target = event.target;
-    if (target && (target.tagName === "BUTTON" || target.closest("button"))) return;
+  root.querySelector("#vn-header").addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
     const rect = root.getBoundingClientRect();
-    dragMoved = false;
-    dragState = {
-      startX: event.clientX,
-      startY: event.clientY,
-      startLeft: rect.left,
-      startTop: rect.top,
-    };
+    suppressClick = false;
+    dragState = { startX: e.clientX, startY: e.clientY, startLeft: rect.left, startTop: rect.top };
     root.classList.add("vn-dragging");
     window.addEventListener("pointermove", onDragMove);
-    window.addEventListener("pointerup", onDragEnd);
+    window.addEventListener("pointerup",   onDragEnd);
   });
 
   root.querySelector("#vn-header").addEventListener("click", () => {
-    if (suppressClick) {
-      suppressClick = false;
-      return;
-    }
+    if (suppressClick) { suppressClick = false; return; }
     if (collapsed) setCollapsed(false);
   });
 
-  chrome.storage.local.get([LOCALE_KEY, ENABLED_KEY], (result) => {
-    const stored = result[LOCALE_KEY];
-    if (stored === "en" || stored === "zh") setLocale(stored, { persist: false });
-    if (typeof result[ENABLED_KEY] === "boolean") setEnabled(result[ENABLED_KEY]);
+  // ── Fullscreen ────────────────────────────────────────────
+
+  const updateMode = () => {
+    const isFS = !!document.fullscreenElement;
+    root.classList.toggle("vn-fullscreen", isFS);
+    root.classList.toggle("vn-docked", !isFS);
+    const host = document.fullscreenElement || document.documentElement;
+    if (root.parentElement !== host) host.appendChild(root);
+  };
+
+  document.addEventListener("fullscreenchange", updateMode);
+
+  // ── Note save ─────────────────────────────────────────────
+
+  ui.add.addEventListener("click", async () => {
+    const text = ui.input.value.trim();
+    if (!text) { setStatus(t.needText); return; }
+    notes.unshift({ t: videoEl ? videoEl.currentTime : 0, text, createdAt: Date.now() });
+    ui.input.value = "";
+    await saveNotes();
+    renderNotes();
+    setStatus(t.saved);
   });
 
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local") return;
-    if (changes[ENABLED_KEY]) setEnabled(changes[ENABLED_KEY].newValue);
-    if (changes[LOCALE_KEY]) setLocale(changes[LOCALE_KEY].newValue, { persist: false });
+  ui.input.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      ui.add.click();
+    }
   });
 
-  ui.manage.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "VN_OPEN_OPTIONS" }, (resp) => {
-      if (!resp || !resp.ok) setStatus(t.openFailed);
-    });
+  // ── Copy all / export ─────────────────────────────────────
+
+  ui.copyAll.addEventListener("click", async () => {
+    if (!notes.length) return;
+    const header = [videoMeta.title, videoMeta.url].filter(Boolean).join("\n");
+    const body   = notes.map((n) => `[${formatTime(n.t)}] ${n.text}`).join("\n");
+    await copyText(header ? `${header}\n\n${body}` : body);
+    setStatus(t.copied);
   });
+
+  ui.exportBtn.addEventListener("click", () => {
+    if (!notes.length) return;
+    const lines = [`# ${videoMeta.title || "Untitled"}`, videoMeta.url, ""];
+    notes.forEach((n) => lines.push(`- [${formatTime(n.t)}] ${n.text}`));
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `${(videoMeta.title || "notes").replace(/[^a-zA-Z0-9_-]+/g, "-")}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setStatus(t.exported);
+  });
+
+  // ── AI summary ────────────────────────────────────────────
 
   const PROMPT_TEMPLATE = `You will rewrite a YouTube video into a "readable version", divided into several sections by content topics. The goal is to allow readers to fully understand what the video is about through reading, as if they were reading a blog post.
 
@@ -624,11 +700,12 @@ Style and constraints:
 - Answer in Chinese`;
 
   const renderSummary = (text) => {
+    summaryText = text;
     ui.summary.innerHTML = "";
     if (!text) { ui.summary.classList.remove("vn-summary-visible"); return; }
     ui.summary.classList.add("vn-summary-visible");
     const parts = text.split(/(\[\d{1,2}:\d{2}(?::\d{2})?\])/g);
-    const frag = document.createDocumentFragment();
+    const frag  = document.createDocumentFragment();
     parts.forEach((part) => {
       const m = part.match(/^\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]$/);
       if (m) {
@@ -649,98 +726,145 @@ Style and constraints:
     ui.summary.appendChild(frag);
   };
 
-  ui.summarize.addEventListener("click", async () => {
+  const startSummarize = () => {
     if (summarizing) return;
     if (getPlatform() !== "youtube") { setStatus(t.noTranscript); return; }
     summarizing = true;
     ui.summarize.disabled = true;
-    ui.summarize.textContent = t.summarizing;
-    ui.summary.classList.remove("vn-summary-visible");
+    ui.summarizeLabel.textContent = t.summarizing;
+    renderSummary("");
+    setAiState("loading");
     const prompt = PROMPT_TEMPLATE.replace("{videoUrl}", videoMeta.url);
     chrome.runtime.sendMessage({ type: "VN_SUMMARIZE", prompt }, (resp) => {
       if (!resp?.ok) {
         summarizing = false;
         ui.summarize.disabled = false;
-        ui.summarize.textContent = t.summarize;
+        ui.summarizeLabel.textContent = t.summarize;
+        setAiState("empty");
         setStatus(t.summaryFailed);
       }
     });
+  };
+
+  ui.summarize.addEventListener("click", startSummarize);
+  ui.aiRegen.addEventListener("click", () => {
+    setAiState("empty");
+    switchTab("ai");
+    startSummarize();
+  });
+
+  ui.aiCopy.addEventListener("click", async () => {
+    if (summaryText) { await copyText(summaryText); setStatus(t.copied); }
+  });
+
+  ui.aiExport.addEventListener("click", () => {
+    if (!summaryText) return;
+    const lines = [`# ${videoMeta.title || "Untitled"} — AI 摘要`, videoMeta.url, "", summaryText];
+    const blob  = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement("a");
+    a.href      = url;
+    a.download  = `${(videoMeta.title || "summary").replace(/[^a-zA-Z0-9_-]+/g, "-")}-ai.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setStatus(t.exported);
   });
 
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "VN_SUMMARY_CHUNK") {
+      setAiState("done");
       renderSummary(message.text);
       return;
     }
     if (message.type === "VN_SUMMARY_DONE") {
       summarizing = false;
       ui.summarize.disabled = false;
-      ui.summarize.textContent = t.summarize;
-      setStatus(t.summaryDone || "");
+      ui.summarizeLabel.textContent = t.summarize;
+      setStatus(t.summaryDone);
       return;
     }
     if (message.type === "VN_SUMMARY_ERROR") {
       summarizing = false;
       ui.summarize.disabled = false;
-      ui.summarize.textContent = t.summarize;
-      const msg = message.error === "not_logged_in"
-        ? t.notLoggedIn
-        : message.error === "auth_failed"
+      ui.summarizeLabel.textContent = t.summarize;
+      setAiState("empty");
+      const msg = (message.error === "not_logged_in" || message.error === "auth_failed")
         ? t.notLoggedIn
         : t.summaryFailed;
       setStatus(msg);
     }
   });
 
+  // ── Toggle / manage / lang ────────────────────────────────
+
+  ui.toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setCollapsed(!collapsed);
+  });
+
+  ui.settings.addEventListener("click", (e) => {
+    e.stopPropagation();
+    chrome.runtime.sendMessage({ type: "VN_OPEN_OPTIONS" }, (resp) => {
+      if (!resp?.ok) setStatus(t.openFailed);
+    });
+  });
+
+  ui.manage.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "VN_OPEN_OPTIONS" }, (resp) => {
+      if (!resp?.ok) setStatus(t.openFailed);
+    });
+  });
+
+  ui.langToggle.addEventListener("click", () => {
+    setLocale(locale === "en" ? "zh" : "en");
+  });
+
+  // ── Storage change listeners ──────────────────────────────
+
+  chrome.storage.local.get([LOCALE_KEY, ENABLED_KEY], (result) => {
+    const stored = result[LOCALE_KEY];
+    if (stored === "en" || stored === "zh") setLocale(stored, { persist: false });
+    if (typeof result[ENABLED_KEY] === "boolean") setEnabled(result[ENABLED_KEY]);
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (changes[ENABLED_KEY]) setEnabled(changes[ENABLED_KEY].newValue);
+    if (changes[LOCALE_KEY])  setLocale(changes[LOCALE_KEY].newValue, { persist: false });
+  });
+
+  // ── Main init loop ────────────────────────────────────────
+
   const init = async () => {
     showRoot(false);
     updateMode();
     setInterval(updateTime, 500);
 
-    const observer = new MutationObserver(() => {
+    new MutationObserver(() => {
       const latest = findVideo();
       if (latest && latest !== videoEl) {
         videoEl = latest;
         if (isVideoPage()) attach();
       }
-    });
-
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    }).observe(document.documentElement, { childList: true, subtree: true });
 
     const tick = async () => {
       const urlChanged = currentUrl !== location.href;
-      if (urlChanged) {
-        currentUrl = location.href;
-        videoEl = null;
-      }
-
-      if (!enabled || !isVideoPage()) {
-        showRoot(false);
-        return;
-      }
-
+      if (urlChanged) { currentUrl = location.href; videoEl = null; }
+      if (!enabled || !isVideoPage()) { showRoot(false); return; }
       showRoot(true);
       updateMode();
-
-      if (!videoEl) {
-        const found = findVideo();
-        if (found) videoEl = found;
-      }
-
+      if (!videoEl) { const found = findVideo(); if (found) videoEl = found; }
       if (videoEl) {
         const prevKey = storageKey();
         syncMeta();
-        const nextKey = storageKey();
-        if (urlChanged || prevKey !== nextKey) {
-          await loadNotes();
-          renderNotes();
-        }
+        if (urlChanged || prevKey !== storageKey()) { await loadNotes(); renderNotes(); }
       }
     };
 
-    setInterval(() => {
-      tick().catch(() => {});
-    }, 800);
+    setInterval(() => tick().catch(() => {}), 800);
 
     if (enabled && isVideoPage()) {
       videoEl = await waitForVideo();
