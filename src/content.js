@@ -700,7 +700,7 @@ Style and constraints:
 - Don't reflect requirement-type questions (such as > 500 words).
 - Avoid too much content in one paragraph; break it into multiple logical paragraphs (using bullet points).
 - When referencing specific moments from the video, include the timestamp in [MM:SS] format.
-- Answer in Chinese`;
+- Answer in {language}`;
 
   // Minimal markdown renderer (mirrors options.js — headings, bold/italic,
   // inline & fenced code, lists, blockquotes, links, hr). Input is HTML-escaped
@@ -795,12 +795,22 @@ Style and constraints:
     });
   };
 
+  // Gemini's streaming response sometimes appends an internal conversation
+  // link (http://googleusercontent.com/lmdx_content/<long-hash>) to the
+  // summary text. Strip any trailing instance so it never reaches storage
+  // or the UI. Stripping mid-stream is fine — partial URLs match the same
+  // pattern, so the noise stays out the whole time.
+  const cleanSummaryText = (text) => (text || "")
+    .replace(/\s*https?:\/\/googleusercontent\.com\/lmdx_content\/\S+\s*$/i, "")
+    .trim();
+
   const renderSummary = (text) => {
-    summaryText = text;
+    const cleaned = cleanSummaryText(text);
+    summaryText = cleaned;
     ui.summary.innerHTML = "";
-    if (!text) { ui.summary.classList.remove("vn-summary-visible"); return; }
+    if (!cleaned) { ui.summary.classList.remove("vn-summary-visible"); return; }
     ui.summary.classList.add("vn-summary-visible");
-    ui.summary.innerHTML = renderMarkdown(text);
+    ui.summary.innerHTML = renderMarkdown(cleaned);
     linkifyTimestampsInOverlay(ui.summary);
   };
 
@@ -812,7 +822,10 @@ Style and constraints:
     ui.summarizeLabel.textContent = t.summarizing;
     renderSummary("");
     setAiState("loading");
-    const prompt = PROMPT_TEMPLATE.replace("{videoUrl}", videoMeta.url);
+    const language = locale === "en" ? "English" : "Chinese";
+    const prompt = PROMPT_TEMPLATE
+      .replace("{videoUrl}", videoMeta.url)
+      .replace("{language}", language);
     chrome.runtime.sendMessage({ type: "VN_SUMMARIZE", prompt }, (resp) => {
       if (!resp?.ok) {
         summarizing = false;

@@ -144,21 +144,23 @@ const platformLabel = (platform) => {
 const linkAtTime = (payload, seconds) => {
   const t = Math.max(0, Math.floor(seconds || 0));
   if (!payload.url) return "#";
+  let built = payload.url;
   if (payload.platform === "youtube") {
     try {
       const u = new URL(payload.url);
       u.searchParams.set("t", `${t}s`);
-      return u.toString();
-    } catch { return payload.url; }
-  }
-  if (payload.platform === "bilibili") {
+      built = u.toString();
+    } catch {}
+  } else if (payload.platform === "bilibili") {
     try {
       const u = new URL(payload.url);
       u.searchParams.set("t", String(t));
-      return u.toString();
-    } catch { return payload.url; }
+      built = u.toString();
+    } catch {}
   }
-  return payload.url;
+  // Re-validate scheme — payload.url could in theory be a javascript: URL
+  // that URL() accepts; only allow http(s)/mailto through.
+  return safeUrl(built);
 };
 
 const exportPayload = (payload) => {
@@ -240,6 +242,16 @@ const thumbnailFor = (payload) => {
     return `https://i.ytimg.com/vi/${payload.id}/mqdefault.jpg`;
   }
   return "";
+};
+
+// URL values come from third-party pages (location.href, og:image), so we
+// only allow safe schemes — never let `javascript:` etc. reach an href/src.
+const safeUrl = (url) => {
+  if (!url) return "#";
+  try {
+    const u = new URL(url, location.href);
+    return /^(https?|mailto):$/.test(u.protocol) ? url : "#";
+  } catch { return "#"; }
 };
 
 /* ── Minimal Markdown renderer ─────────────────────────────
@@ -431,20 +443,13 @@ const renderCard = (entry) => {
   const card = document.createElement("article");
   card.className = "fj-card";
 
-  // Head
+  // Head — static structure only; all user data set via DOM properties below
   const head = document.createElement("div");
   head.className = "fj-card-head";
   const thumbUrl = thumbnailFor(payload);
-  const thumbInner = thumbUrl
-    ? `<a class="fj-card-thumb-link" href="${payload.url || "#"}" target="_blank" rel="noreferrer" title="${t.thumbTitle}">
-         <img class="fj-card-thumb-img" src="${thumbUrl}" alt="" loading="lazy" referrerpolicy="no-referrer" />
-         <span class="fj-card-thumb-play">${ICON_PLAY}</span>
-       </a>`
-    : `<a class="fj-card-thumb-link" href="${payload.url || "#"}" target="_blank" rel="noreferrer" title="${t.thumbTitle}">
-         <span class="fj-card-thumb-fallback">${ICON_PLAY}</span>
-       </a>`;
+  const sanitizedUrl = safeUrl(payload.url);
   head.innerHTML = `
-    <div class="fj-card-thumb" data-platform="${payload.platform || ""}">${thumbInner}</div>
+    <div class="fj-card-thumb"></div>
     <div class="fj-card-meta">
       <h3 class="fj-card-title"></h3>
       <div class="fj-card-info">
@@ -459,18 +464,49 @@ const renderCard = (entry) => {
       <button class="fj-ic-btn danger" data-action="delete" title="${t.cardDelete}">${ICON_TRASH}</button>
     </div>
   `;
-  // If the thumbnail fails to load, swap to fallback play icon
-  const imgEl = head.querySelector(".fj-card-thumb-img");
-  if (imgEl) {
-    imgEl.addEventListener("error", () => {
-      const link = head.querySelector(".fj-card-thumb-link");
-      if (link) link.innerHTML = `<span class="fj-card-thumb-fallback">${ICON_PLAY}</span>`;
-    });
+
+  // Build the thumb via DOM APIs so payload.url / thumbUrl / payload.platform
+  // (third-party data) never get interpolated into raw HTML.
+  const thumbBox = head.querySelector(".fj-card-thumb");
+  thumbBox.dataset.platform = payload.platform || "";
+
+  const thumbLink = document.createElement("a");
+  thumbLink.className = "fj-card-thumb-link";
+  thumbLink.href      = sanitizedUrl;
+  thumbLink.target    = "_blank";
+  thumbLink.rel       = "noreferrer";
+  thumbLink.title     = t.thumbTitle;
+
+  const renderThumbFallback = () => {
+    thumbLink.textContent = "";
+    const fb = document.createElement("span");
+    fb.className = "fj-card-thumb-fallback";
+    fb.innerHTML = ICON_PLAY; // static SVG
+    thumbLink.appendChild(fb);
+  };
+
+  if (thumbUrl) {
+    const img = document.createElement("img");
+    img.className      = "fj-card-thumb-img";
+    img.src            = thumbUrl;       // property assignment — auto-escaped
+    img.alt            = "";
+    img.loading        = "lazy";
+    img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", renderThumbFallback);
+    const playOverlay = document.createElement("span");
+    playOverlay.className = "fj-card-thumb-play";
+    playOverlay.innerHTML = ICON_PLAY;
+    thumbLink.appendChild(img);
+    thumbLink.appendChild(playOverlay);
+  } else {
+    renderThumbFallback();
   }
+  thumbBox.appendChild(thumbLink);
+
   head.querySelector(".fj-card-title").textContent = payload.title || t.untitled;
   const linkEl = head.querySelector(".fj-card-link");
   linkEl.textContent = payload.url || "—";
-  linkEl.href        = payload.url || "#";
+  linkEl.href        = sanitizedUrl;
 
   head.querySelector('[data-action="export"]').addEventListener("click", () => {
     downloadText(exportPayload(payload), `${safeFilename(payload.title)}.md`);
