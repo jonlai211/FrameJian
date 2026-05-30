@@ -95,17 +95,16 @@
   root.className = "vn-docked";
 
   const COLLAPSE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-  const SETTINGS_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+  const LIBRARY_SVG  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`;
 
   root.innerHTML = `
     <div id="vn-panel">
       <div id="vn-header">
         <span class="fj-logo"><span class="fj-zhen">笺</span></span>
         <span id="vn-title">${t.title}</span>
-        <span id="vn-count-badge"></span>
         <span id="vn-time-pill">--:--</span>
         <div id="vn-hdr-actions">
-          <button class="fj-ic" id="vn-settings" aria-label="manage">${SETTINGS_SVG}</button>
+          <button class="fj-ic" id="vn-settings" aria-label="library">${LIBRARY_SVG}</button>
           <button class="fj-ic" id="vn-toggle" aria-label="${t.collapse}">${COLLAPSE_SVG}</button>
         </div>
       </div>
@@ -123,17 +122,17 @@
           <div id="vn-list"></div>
           <div id="vn-composer">
             <div class="fj-composer-wrap">
-              <span class="fj-ts-now" id="vn-input-ts"></span>
-              <textarea id="vn-input" placeholder="${t.write}" maxlength="2000"></textarea>
-            </div>
-            <div id="vn-composer-bar">
-              <span class="fj-kbd-hint"><kbd>⌘</kbd><kbd>↵</kbd></span>
-              <button class="fj-act-btn" id="vn-copy-all">${t.copyAll}</button>
-              <button class="fj-act-btn" id="vn-export">${t.export}</button>
-              <button class="fj-save-btn" id="vn-add">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span id="vn-save-text">${t.save}</span>
-              </button>
+              <div class="fj-composer-top">
+                <span class="fj-ts-now" id="vn-input-ts"></span>
+                <textarea id="vn-input" placeholder="${t.write}" maxlength="2000"></textarea>
+              </div>
+              <div class="fj-composer-bar">
+                <span class="fj-kbd-hint"><kbd>⌘</kbd><kbd>↵</kbd></span>
+                <button class="fj-save-btn" id="vn-add">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span id="vn-save-text">${t.save}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -154,7 +153,7 @@
           </div>
           <div id="vn-summary"></div>
           <div id="vn-ai-actions">
-            <button class="fj-ai-btn primary" id="vn-ai-export">导出 Markdown</button>
+            <button class="fj-ai-btn primary" id="vn-ai-export"><span id="vn-ai-export-label">${t.export}</span></button>
             <button class="fj-ai-btn" id="vn-ai-copy">${t.copy}</button>
             <button class="fj-ai-btn" id="vn-ai-regen">${t.regenSummary}</button>
           </div>
@@ -164,7 +163,6 @@
           <button id="vn-lang-toggle">EN</button>
           <div id="vn-status"></div>
           <div class="fj-foot-r">
-            <button id="vn-manage">${t.manage}</button>
             <span id="vn-meta"></span>
           </div>
         </div>
@@ -185,7 +183,6 @@
 
   const ui = {
     title:           root.querySelector("#vn-title"),
-    countBadge:      root.querySelector("#vn-count-badge"),
     timePill:        root.querySelector("#vn-time-pill"),
     toggle:          root.querySelector("#vn-toggle"),
     settings:        root.querySelector("#vn-settings"),
@@ -199,8 +196,6 @@
     input:           root.querySelector("#vn-input"),
     add:             root.querySelector("#vn-add"),
     saveText:        root.querySelector("#vn-save-text"),
-    copyAll:         root.querySelector("#vn-copy-all"),
-    exportBtn:       root.querySelector("#vn-export"),
     aiEmpty:         root.querySelector("#vn-ai-empty"),
     aiLoading:       root.querySelector("#vn-ai-loading"),
     summarize:       root.querySelector("#vn-summarize"),
@@ -208,11 +203,11 @@
     summary:         root.querySelector("#vn-summary"),
     aiActions:       root.querySelector("#vn-ai-actions"),
     aiExport:        root.querySelector("#vn-ai-export"),
+    aiExportLabel:   root.querySelector("#vn-ai-export-label"),
     aiCopy:          root.querySelector("#vn-ai-copy"),
     aiRegen:         root.querySelector("#vn-ai-regen"),
     status:          root.querySelector("#vn-status"),
     meta:            root.querySelector("#vn-meta"),
-    manage:          root.querySelector("#vn-manage"),
     langToggle:      root.querySelector("#vn-lang-toggle"),
   };
 
@@ -250,17 +245,15 @@
     ui.tabNotes.querySelector(".fj-tab-label").textContent = t.tabNotes;
     ui.tabAi.querySelector(".fj-tab-label").textContent    = t.tabAi;
     ui.saveText.textContent    = t.save;
-    ui.copyAll.textContent     = t.copyAll;
-    ui.exportBtn.textContent   = t.export;
-    ui.manage.textContent      = t.manage;
     ui.langToggle.textContent  = locale === "en" ? "EN" : "中";
     ui.input.placeholder       = t.write;
     if (!summarizing) ui.summarizeLabel.textContent = t.summarize;
     // Update AI sub text
     root.querySelector(".fj-ai-h").textContent  = t.aiTitle;
     root.querySelector(".fj-ai-sub").textContent = t.aiSubtext;
-    ui.aiCopy.textContent  = t.copy;
-    ui.aiRegen.textContent = t.regenSummary;
+    ui.aiCopy.textContent       = t.copy;
+    ui.aiRegen.textContent      = t.regenSummary;
+    ui.aiExportLabel.textContent = t.export;
   };
 
   const setEnabled = (next) => {
@@ -347,38 +340,53 @@
 
   // ── Storage ───────────────────────────────────────────────
 
-  const loadNotes = async () => {
+  let summaryUpdatedAt = 0;
+
+  const loadPayload = async () => {
     return new Promise((resolve) => {
       chrome.storage.local.get([storageKey()], (result) => {
         const payload = result[storageKey()];
         notes = payload && Array.isArray(payload.notes) ? payload.notes : [];
+        if (payload && payload.summary && typeof payload.summary.text === "string") {
+          summaryText      = payload.summary.text;
+          summaryUpdatedAt = payload.summary.updatedAt || 0;
+        } else {
+          summaryText      = "";
+          summaryUpdatedAt = 0;
+        }
         resolve();
       });
     });
   };
 
-  const saveNotes = async () => {
+  // Kept for backwards compatibility with existing callers
+  const loadNotes = loadPayload;
+
+  const savePayload = async () => {
     return new Promise((resolve) => {
-      chrome.storage.local.set({
-        [storageKey()]: {
-          title: videoMeta.title,
-          url: videoMeta.url,
-          platform: videoMeta.platform,
-          id: videoMeta.id,
-          notes,
-          updatedAt: Date.now(),
-        },
-      }, resolve);
+      const data = {
+        title: videoMeta.title,
+        url: videoMeta.url,
+        platform: videoMeta.platform,
+        id: videoMeta.id,
+        thumbnail: videoMeta.thumbnail || "",
+        notes,
+        updatedAt: Date.now(),
+      };
+      if (summaryText) {
+        data.summary = { text: summaryText, updatedAt: summaryUpdatedAt || Date.now() };
+      }
+      chrome.storage.local.set({ [storageKey()]: data }, resolve);
     });
   };
+
+  const saveNotes = savePayload;
 
   // ── Render notes ──────────────────────────────────────────
 
   const renderNotes = () => {
     const count = notes.length;
     ui.tabNotesCount.textContent = String(count);
-    ui.countBadge.textContent = String(count);
-    ui.countBadge.classList.toggle("visible", count > 0);
 
     ui.list.innerHTML = "";
 
@@ -391,8 +399,14 @@
     }
 
     notes.forEach((note, idx) => {
+      // Container is block; main row stays as a flex row, the action menu
+      // and inline editor are full-width siblings below it (avoids the
+      // flex-stretch chaos when actions were appended into the row itself).
       const item = document.createElement("div");
       item.className = "fj-note";
+
+      const row = document.createElement("div");
+      row.className = "fj-note-row";
 
       const tsBtn = document.createElement("button");
       tsBtn.className = "fj-note-ts";
@@ -410,6 +424,15 @@
       const more = document.createElement("button");
       more.className = "fj-note-more";
       more.textContent = "⋯";
+
+      const mkBtn = (label, cls, handler) => {
+        const b = document.createElement("button");
+        b.className = "fj-note-act" + (cls ? " " + cls : "");
+        b.textContent = label;
+        b.addEventListener("click", (ev) => { ev.stopPropagation(); handler(); });
+        return b;
+      };
+
       more.addEventListener("click", (e) => {
         e.stopPropagation();
         const existing = item.querySelector(".fj-note-acts");
@@ -417,51 +440,36 @@
         const acts = document.createElement("div");
         acts.className = "fj-note-acts";
 
-        const mkBtn = (label, cls, handler) => {
-          const b = document.createElement("button");
-          b.className = "fj-note-act" + (cls ? " " + cls : "");
-          b.textContent = label;
-          b.addEventListener("click", (ev) => { ev.stopPropagation(); handler(); });
-          return b;
-        };
-
-        acts.appendChild(mkBtn(t.jump, "", () => {
-          if (videoEl) { videoEl.currentTime = note.t; videoEl.play().catch(() => {}); }
-        }));
-
-        acts.appendChild(mkBtn(t.copy, "", async () => {
-          await copyText(`[${formatTime(note.t)}] ${note.text}`);
-          setStatus(t.copied);
-          acts.remove();
-        }));
-
         acts.appendChild(mkBtn(t.edit, "", () => {
           acts.remove();
-          body.style.display = "none";
+          row.style.display = "none";
+
+          const editWrap = document.createElement("div");
+          editWrap.className = "fj-note-edit";
+
           const editor = document.createElement("textarea");
           editor.className = "fj-note-edit-area";
           editor.value = note.text;
-          item.insertBefore(editor, more);
+          editWrap.appendChild(editor);
 
           const editActs = document.createElement("div");
-          editActs.className = "fj-note-acts";
+          editActs.className = "fj-note-acts fj-note-acts-edit";
 
-          const saveBtn = mkBtn(t.save, "", async () => {
+          const saveBtn = mkBtn(t.save, "primary", async () => {
             const val = editor.value.trim();
             if (val) { note.text = val; await saveNotes(); }
             renderNotes();
             setStatus(t.updated);
           });
-
-          const cancelBtn = mkBtn(t.cancel || "Cancel", "", () => {
-            editor.remove();
-            editActs.remove();
-            body.style.display = "";
+          const cancelBtn = mkBtn(t.cancel, "", () => {
+            editWrap.remove();
+            row.style.display = "";
           });
 
           editActs.appendChild(saveBtn);
           editActs.appendChild(cancelBtn);
-          item.appendChild(editActs);
+          editWrap.appendChild(editActs);
+          item.appendChild(editWrap);
           editor.focus();
         }));
 
@@ -474,9 +482,10 @@
         item.appendChild(acts);
       });
 
-      item.appendChild(tsBtn);
-      item.appendChild(body);
-      item.appendChild(more);
+      row.appendChild(tsBtn);
+      row.appendChild(body);
+      row.appendChild(more);
+      item.appendChild(row);
       ui.list.appendChild(item);
     });
   };
@@ -512,12 +521,25 @@
     return location.href.split("#")[0];
   };
 
+  const captureThumbnail = (platform, id) => {
+    const og = document.querySelector('meta[property="og:image"]')?.content
+            || document.querySelector('meta[name="og:image"]')?.content
+            || document.querySelector('meta[name="twitter:image"]')?.content
+            || "";
+    if (og) return og;
+    if (platform === "youtube" && id && id !== "unknown") {
+      return `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+    }
+    return "";
+  };
+
   const syncMeta = () => {
     const platform = getPlatform();
-    videoMeta.platform = platform;
-    videoMeta.id       = getVideoId(platform);
-    videoMeta.url      = normalizeUrl();
-    videoMeta.title    = document.title.replace(" - YouTube", "").replace("_哔哩哔哩_bilibili", "");
+    videoMeta.platform  = platform;
+    videoMeta.id        = getVideoId(platform);
+    videoMeta.url       = normalizeUrl();
+    videoMeta.title     = document.title.replace(" - YouTube", "").replace("_哔哩哔哩_bilibili", "");
+    videoMeta.thumbnail = captureThumbnail(platform, videoMeta.id);
     if (platform === "bilibili")      ui.meta.textContent = "Bilibili";
     else if (platform === "youtube")  ui.meta.textContent = "YouTube";
     else                              ui.meta.textContent = "";
@@ -525,8 +547,15 @@
 
   const attach = async () => {
     syncMeta();
-    await loadNotes();
+    await loadPayload();
     renderNotes();
+    if (summaryText) {
+      renderSummary(summaryText);
+      setAiState("done");
+    } else {
+      renderSummary("");
+      setAiState("empty");
+    }
     updateTime();
   };
 
@@ -645,32 +674,6 @@
     }
   });
 
-  // ── Copy all / export ─────────────────────────────────────
-
-  ui.copyAll.addEventListener("click", async () => {
-    if (!notes.length) return;
-    const header = [videoMeta.title, videoMeta.url].filter(Boolean).join("\n");
-    const body   = notes.map((n) => `[${formatTime(n.t)}] ${n.text}`).join("\n");
-    await copyText(header ? `${header}\n\n${body}` : body);
-    setStatus(t.copied);
-  });
-
-  ui.exportBtn.addEventListener("click", () => {
-    if (!notes.length) return;
-    const lines = [`# ${videoMeta.title || "Untitled"}`, videoMeta.url, ""];
-    notes.forEach((n) => lines.push(`- [${formatTime(n.t)}] ${n.text}`));
-    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
-    a.download = `${(videoMeta.title || "notes").replace(/[^a-zA-Z0-9_-]+/g, "-")}.md`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    setStatus(t.exported);
-  });
-
   // ── AI summary ────────────────────────────────────────────
 
   const PROMPT_TEMPLATE = `You will rewrite a YouTube video into a "readable version", divided into several sections by content topics. The goal is to allow readers to fully understand what the video is about through reading, as if they were reading a blog post.
@@ -699,31 +702,106 @@ Style and constraints:
 - When referencing specific moments from the video, include the timestamp in [MM:SS] format.
 - Answer in Chinese`;
 
+  // Minimal markdown renderer (mirrors options.js — headings, bold/italic,
+  // inline & fenced code, lists, blockquotes, links, hr). Input is HTML-escaped
+  // first; timestamp tokens like [12:34] are left as plain text and converted
+  // to clickable buttons in a post-processing step.
+  const _esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const _renderInline = (s) => s
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>")
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+
+  const renderMarkdown = (raw) => {
+    let text = _esc(raw);
+    const codeBlocks = [];
+    text = text.replace(/```([a-z0-9]*)\n?([\s\S]*?)```/gi, (_m, _lang, code) => {
+      const i = codeBlocks.length;
+      codeBlocks.push(`<pre><code>${code.replace(/\n$/, "")}</code></pre>`);
+      return `\x00CB${i}\x00`;
+    });
+
+    const lines = text.split(/\r?\n/);
+    const out = [];
+    let listType = null;
+    let inBlockquote = false;
+    let paragraphBuf = [];
+    const flushP = () => { if (paragraphBuf.length) { out.push(`<p>${paragraphBuf.join("<br>")}</p>`); paragraphBuf = []; } };
+    const closeList = () => { if (listType) { out.push(`</${listType}>`); listType = null; } };
+    const closeBq = () => { if (inBlockquote) { out.push("</blockquote>"); inBlockquote = false; } };
+
+    for (const raw2 of lines) {
+      const line = raw2.trimEnd();
+      if (!line.trim()) { flushP(); closeList(); closeBq(); continue; }
+      if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(line.trim())) { flushP(); closeList(); closeBq(); out.push("<hr>"); continue; }
+      const h = line.match(/^(#{1,6})\s+(.*)$/);
+      if (h) { flushP(); closeList(); closeBq(); out.push(`<h${h[1].length}>${_renderInline(h[2].trim())}</h${h[1].length}>`); continue; }
+      if (line.startsWith("&gt; ") || line.startsWith("> ")) {
+        flushP(); closeList();
+        if (!inBlockquote) { out.push("<blockquote>"); inBlockquote = true; }
+        out.push(`<p>${_renderInline(line.replace(/^(&gt;|>)\s+/, ""))}</p>`);
+        continue;
+      }
+      closeBq();
+      const ul = line.match(/^\s*[-*+]\s+(.*)$/);
+      if (ul) { flushP(); if (listType !== "ul") { closeList(); out.push("<ul>"); listType = "ul"; } out.push(`<li>${_renderInline(ul[1])}</li>`); continue; }
+      const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+      if (ol) { flushP(); if (listType !== "ol") { closeList(); out.push("<ol>"); listType = "ol"; } out.push(`<li>${_renderInline(ol[1])}</li>`); continue; }
+      closeList();
+      paragraphBuf.push(_renderInline(line));
+    }
+    flushP(); closeList(); closeBq();
+
+    let html = out.join("\n");
+    html = html.replace(/\x00CB(\d+)\x00/g, (_m, i) => codeBlocks[Number(i)]);
+    return html;
+  };
+
+  // Walk rendered DOM, swap [MM:SS] text patterns with click-to-seek buttons.
+  const linkifyTimestampsInOverlay = (root) => {
+    const tsRE = /\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => tsRE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+    });
+    const targets = [];
+    let cur;
+    while ((cur = walker.nextNode())) targets.push(cur);
+
+    targets.forEach((textNode) => {
+      tsRE.lastIndex = 0;
+      const parent = textNode.parentNode;
+      const value  = textNode.nodeValue;
+      const frag   = document.createDocumentFragment();
+      let lastIdx  = 0;
+      let m;
+      while ((m = tsRE.exec(value)) !== null) {
+        if (m.index > lastIdx) frag.appendChild(document.createTextNode(value.slice(lastIdx, m.index)));
+        const secs = m[3] !== undefined
+          ? +m[1] * 3600 + +m[2] * 60 + +m[3]
+          : +m[1] * 60 + +m[2];
+        const btn = document.createElement("button");
+        btn.className   = "vn-ts-link";
+        btn.textContent = m[0];
+        btn.addEventListener("click", () => {
+          if (videoEl) { videoEl.currentTime = secs; videoEl.play().catch(() => {}); }
+        });
+        frag.appendChild(btn);
+        lastIdx = m.index + m[0].length;
+      }
+      if (lastIdx < value.length) frag.appendChild(document.createTextNode(value.slice(lastIdx)));
+      parent.replaceChild(frag, textNode);
+    });
+  };
+
   const renderSummary = (text) => {
     summaryText = text;
     ui.summary.innerHTML = "";
     if (!text) { ui.summary.classList.remove("vn-summary-visible"); return; }
     ui.summary.classList.add("vn-summary-visible");
-    const parts = text.split(/(\[\d{1,2}:\d{2}(?::\d{2})?\])/g);
-    const frag  = document.createDocumentFragment();
-    parts.forEach((part) => {
-      const m = part.match(/^\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]$/);
-      if (m) {
-        const secs = m[3] !== undefined
-          ? +m[1] * 3600 + +m[2] * 60 + +m[3]
-          : +m[1] * 60 + +m[2];
-        const btn = document.createElement("button");
-        btn.className = "vn-ts-link";
-        btn.textContent = part;
-        btn.addEventListener("click", () => {
-          if (videoEl) { videoEl.currentTime = secs; videoEl.play().catch(() => {}); }
-        });
-        frag.appendChild(btn);
-      } else {
-        frag.appendChild(document.createTextNode(part));
-      }
-    });
-    ui.summary.appendChild(frag);
+    ui.summary.innerHTML = renderMarkdown(text);
+    linkifyTimestampsInOverlay(ui.summary);
   };
 
   const startSummarize = () => {
@@ -782,6 +860,8 @@ Style and constraints:
       summarizing = false;
       ui.summarize.disabled = false;
       ui.summarizeLabel.textContent = t.summarize;
+      summaryUpdatedAt = Date.now();
+      savePayload();
       setStatus(t.summaryDone);
       return;
     }
@@ -811,11 +891,6 @@ Style and constraints:
     });
   });
 
-  ui.manage.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "VN_OPEN_OPTIONS" }, (resp) => {
-      if (!resp?.ok) setStatus(t.openFailed);
-    });
-  });
 
   ui.langToggle.addEventListener("click", () => {
     setLocale(locale === "en" ? "zh" : "en");
@@ -860,7 +935,12 @@ Style and constraints:
       if (videoEl) {
         const prevKey = storageKey();
         syncMeta();
-        if (urlChanged || prevKey !== storageKey()) { await loadNotes(); renderNotes(); }
+        if (urlChanged || prevKey !== storageKey()) {
+          await loadPayload();
+          renderNotes();
+          if (summaryText) { renderSummary(summaryText); setAiState("done"); }
+          else             { renderSummary(""); setAiState("empty"); }
+        }
       }
     };
 

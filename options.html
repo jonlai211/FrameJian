@@ -1,25 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Video Notes Manager</title>
+    <title>FrameJian · Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700;900&family=JetBrains+Mono:wght@500;600&display=swap" />
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
-    <div class="wrap">
-      <header class="top">
-        <div>
-          <h1>Video Notes</h1>
-          <p class="sub">Manage all saved notes (YouTube & Bilibili).</p>
+    <div class="fj-page">
+      <header class="fj-topbar">
+        <div class="fj-topbar-l">
+          <span class="fj-logo"><span class="fj-zhen">笺</span></span>
+          <div class="fj-brand">
+            <h1>帧笺 <span class="fj-brand-en">FrameJian</span></h1>
+            <p class="fj-sub" id="fj-subtitle"></p>
+          </div>
         </div>
-        <div class="actions">
-          <button id="export-all">Export All</button>
-          <button id="refresh">Refresh</button>
+        <div class="fj-topbar-r">
+          <div class="fj-search-wrap">
+            <svg class="fj-search-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="search" class="fj-search" />
+          </div>
+          <button class="fj-btn ghost" id="refresh">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span class="fj-btn-label" id="refresh-label"></span>
+          </button>
+          <button class="fj-btn primary" id="export-all">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="fj-btn-label" id="export-all-label"></span>
+          </button>
         </div>
       </header>
-      <section id="list" class="list"></section>
-      <div id="empty" class="empty">No notes yet.</div>
+
+      <div class="fj-stats" id="stats"></div>
+
+      <main id="list" class="fj-list"></main>
+
+      <div id="empty" class="fj-empty">
+        <div class="fj-empty-ic">∅</div>
+        <div class="fj-empty-title" id="empty-title"></div>
+        <div class="fj-empty-sub" id="empty-sub"></div>
+      </div>
     </div>
     <script src="options.js"></script>
   </body>
