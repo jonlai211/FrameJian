@@ -6,6 +6,8 @@ FrameJian floats a frosted-glass panel over the video page so you can capture
 moments as you watch, then turn the whole video into a structured AI summary
 with clickable timestamps that jump back to the exact frame.
 
+![FrameJian overlay on a YouTube video — AI summary tab with rendered markdown](assets/screenshots/hero.png)
+
 ## Features
 
 - **Timestamped notes** — one keystroke (`⌘/Ctrl + Enter`) saves the current
@@ -44,13 +46,24 @@ The toolbar icon toggles the overlay globally; the icon greys out when disabled.
 - Click the book icon in the header to open your full library
 - Click the dash icon to collapse to a pill
 
+The overlay rides along even in fullscreen — drop a note without leaving the
+player, or shrink it down to a corner pill that just shows the current
+timestamp:
+
+| Take notes mid-watch | Collapse to a corner pill |
+| :--: | :--: |
+| ![Overlay during YouTube fullscreen, note composer visible](assets/screenshots/notes-fullscreen.png) | ![Collapsed FrameJian pill in the corner of a fullscreen video](assets/screenshots/collapsed-pill.png) |
+
 ### Library Page (Options)
 - Every saved video gets a card with its real thumbnail, title, platform,
   link, and last-updated time
 - Per-card tabs for **Notes** / **AI Summary**
 - Search box filters across titles, URLs, note bodies, summary text
 - Each card exports its notes + summary as a single Markdown file; the global
-  **Export all** stitches everything together
+  **Export all** stitches everything together, and **Backup (.json)** dumps a
+  round-trippable archive you can re-import later
+
+![FrameJian library page showing stats, search, and a video card with rendered AI summary](assets/screenshots/library.png)
 
 ### AI Summary requirements
 - Must be signed in to <https://gemini.google.com> in the same browser profile

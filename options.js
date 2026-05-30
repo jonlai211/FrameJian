@@ -222,13 +222,18 @@ const ICON_DOWNLOAD = `<svg width="14" height="14" viewBox="0 0 24 24" fill="non
 const ICON_TRASH    = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>`;
 const ICON_PLAY     = `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>`;
 
-// Best-effort thumbnail URL with fallback for older payloads (pre-thumbnail era)
+// Best-effort thumbnail URL.
+// For YouTube, the thumbnail URL embeds the video id (`/vi/{ID}/...`). If
+// the saved one points at a different id we know it was captured stale
+// during SPA navigation — fall back to the deterministic derived URL so
+// the wrong cover doesn't keep showing.
 const thumbnailFor = (payload) => {
-  if (payload.thumbnail) return payload.thumbnail;
   if (payload.platform === "youtube" && payload.id && payload.id !== "unknown") {
+    const saved = payload.thumbnail || "";
+    if (saved.includes(`/vi/${payload.id}/`)) return saved;
     return `https://i.ytimg.com/vi/${payload.id}/mqdefault.jpg`;
   }
-  return "";
+  return payload.thumbnail || "";
 };
 
 // Options-side timestamp link: anchor that opens the video at the given

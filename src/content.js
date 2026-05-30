@@ -27,6 +27,9 @@
       summaryDone:   "Done",
       notLoggedIn:   "Log in to gemini.google.com first",
       regenSummary:  "Regenerate",
+      aiNeedsLoginH: "Sign in to Gemini first",
+      aiNeedsLoginSub: "FrameJian uses your existing gemini.google.com session — no API key needed. Sign in and try again.",
+      openGemini:    "Open Gemini",
     },
     zh: {
       ...FJ_STRINGS_COMMON.zh,
@@ -52,6 +55,9 @@
       summaryDone:   "完成",
       notLoggedIn:   "请先登录 gemini.google.com",
       regenSummary:  "重新生成",
+      aiNeedsLoginH: "请先登录 Gemini",
+      aiNeedsLoginSub: "帧笺使用你浏览器里已登录的 gemini.google.com 会话，无需 API key。登录后再试。",
+      openGemini:    "打开 Gemini",
     },
   };
 
@@ -122,9 +128,13 @@
         <div id="vn-panel-ai">
           <div id="vn-ai-empty">
             <div class="fj-ai-spark">✦</div>
-            <div class="fj-ai-h">${t.aiTitle}</div>
-            <div class="fj-ai-sub">${t.aiSubtext}</div>
+            <div class="fj-ai-h" id="vn-ai-empty-h">${t.aiTitle}</div>
+            <div class="fj-ai-sub" id="vn-ai-empty-sub">${t.aiSubtext}</div>
             <button id="vn-summarize">✦ <span id="vn-summarize-label">${t.summarize}</span></button>
+            <button id="vn-open-gemini" class="fj-ai-secondary">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span id="vn-open-gemini-label">${t.openGemini}</span>
+            </button>
           </div>
           <div id="vn-ai-loading">
             <div class="fj-skel long"></div>
@@ -179,6 +189,10 @@
     add:             root.querySelector("#vn-add"),
     saveText:        root.querySelector("#vn-save-text"),
     aiEmpty:         root.querySelector("#vn-ai-empty"),
+    aiEmptyH:        root.querySelector("#vn-ai-empty-h"),
+    aiEmptySub:      root.querySelector("#vn-ai-empty-sub"),
+    openGemini:      root.querySelector("#vn-open-gemini"),
+    openGeminiLabel: root.querySelector("#vn-open-gemini-label"),
     aiLoading:       root.querySelector("#vn-ai-loading"),
     summarize:       root.querySelector("#vn-summarize"),
     summarizeLabel:  root.querySelector("#vn-summarize-label"),
@@ -208,6 +222,25 @@
 
   // ── AI panel state ────────────────────────────────────────
 
+  // The "empty" panel has two variants:
+  //   - default:     spark + title + sub + Summarize button
+  //   - needs-login: spark + login prompt + [Open Gemini] (primary) +
+  //                  Summarize stays visible as a "try again" affordance
+  // setEmptyMode flips the variant; setAiState handles which top-level state
+  // (empty / loading / done) is visible.
+  let currentEmptyMode = "default";
+
+  const setEmptyMode = (mode) => {
+    currentEmptyMode = mode;
+    const needsLogin = mode === "needs-login";
+    ui.aiEmptyH.textContent     = needsLogin ? t.aiNeedsLoginH   : t.aiTitle;
+    ui.aiEmptySub.textContent   = needsLogin ? t.aiNeedsLoginSub : t.aiSubtext;
+    ui.openGemini.style.display = needsLogin ? "inline-flex" : "none";
+    // Demote Summarize in needs-login mode so Open Gemini is the obvious
+    // primary action — but keep it visible as the post-login "retry" path.
+    ui.summarize.classList.toggle("secondary", needsLogin);
+  };
+
   const setAiState = (state) => {
     // state: "empty" | "loading" | "done"
     ui.aiEmpty.style.display    = state === "empty"   ? "" : "none";
@@ -217,6 +250,13 @@
   };
 
   setAiState("empty");
+  setEmptyMode("default");
+
+  // Clicking "Open Gemini" opens the login page in a new tab. Once they sign
+  // in they can come back and click Summarize again.
+  ui.openGemini.addEventListener("click", () => {
+    window.open("https://gemini.google.com", "_blank", "noopener");
+  });
 
   // ── Locale ────────────────────────────────────────────────
 
@@ -230,9 +270,9 @@
     ui.langToggle.textContent  = locale === "en" ? "EN" : "中";
     ui.input.placeholder       = t.write;
     if (!summarizing) ui.summarizeLabel.textContent = t.summarize;
-    // Update AI sub text
-    root.querySelector(".fj-ai-h").textContent  = t.aiTitle;
-    root.querySelector(".fj-ai-sub").textContent = t.aiSubtext;
+    // Re-apply empty-mode strings (default vs needs-login) for the new locale
+    setEmptyMode(currentEmptyMode);
+    ui.openGeminiLabel.textContent = t.openGemini;
     ui.aiCopy.textContent       = t.copy;
     ui.aiRegen.textContent      = t.regenSummary;
     ui.aiExportLabel.textContent = t.export;
@@ -505,11 +545,22 @@
             || document.querySelector('meta[name="og:image"]')?.content
             || document.querySelector('meta[name="twitter:image"]')?.content
             || "";
-    if (og) return og;
-    if (platform === "youtube" && id && id !== "unknown") {
-      return `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+
+    if (platform === "youtube") {
+      // YouTube SPA-navigates faster than its meta tags update. The og:image
+      // we read here might still point at the previous video. The thumbnail
+      // URL always embeds the id (`/vi/{ID}/...`), so trust it only when the
+      // id matches — otherwise build the deterministic fallback.
+      if (id && id !== "unknown") {
+        if (og && og.includes(`/vi/${id}/`)) return og;
+        return `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+      }
+      return "";
     }
-    return "";
+
+    // Bilibili thumbnails (i0.hdslb.com/...) don't embed the BV id, so we
+    // can't validate; trust og:image and accept rare lag.
+    return og;
   };
 
   const syncMeta = () => {
@@ -519,6 +570,14 @@
     videoMeta.url       = normalizeUrl();
     videoMeta.title     = document.title.replace(" - YouTube", "").replace("_哔哩哔哩_bilibili", "");
     videoMeta.thumbnail = captureThumbnail(platform, videoMeta.id);
+
+    // AI summary depends on Gemini being able to read the video — currently
+    // YouTube-only. Hide the tab on other platforms so the UI doesn't expose
+    // a dead-end action.
+    const aiAvailable = platform === "youtube";
+    root.classList.toggle("vn-no-ai", !aiAvailable);
+    if (!aiAvailable && currentTab === "ai") switchTab("notes");
+
     if (platform === "bilibili")      ui.meta.textContent = "Bilibili";
     else if (platform === "youtube")  ui.meta.textContent = "YouTube";
     else                              ui.meta.textContent = "";
@@ -534,6 +593,7 @@
     } else {
       renderSummary("");
       setAiState("empty");
+      setEmptyMode("default");
     }
     updateTime();
   };
@@ -554,6 +614,11 @@
 
   // ── Collapsed state ───────────────────────────────────────
 
+  // Mirror the CSS --vn-width-expanded so JS can clamp using the target
+  // post-transition size instead of the mid-animation rect (which would
+  // read the still-shrinking width during expansion).
+  const EXPANDED_WIDTH = 340;
+
   const setCollapsed = (next) => {
     if (collapsed && !next) {
       const rect = root.getBoundingClientRect();
@@ -561,12 +626,21 @@
     }
     collapsed = next;
     root.classList.toggle("vn-collapsed", collapsed);
-    if (collapsed && lastCollapsedPos) {
-      root.style.left  = `${lastCollapsedPos.left}px`;
-      root.style.top   = `${lastCollapsedPos.top}px`;
-      root.style.right = "auto";
-    } else if (!collapsed) {
-      requestAnimationFrame(clampToViewport);
+    if (collapsed) {
+      if (lastCollapsedPos) {
+        root.style.left  = `${lastCollapsedPos.left}px`;
+        root.style.top   = `${lastCollapsedPos.top}px`;
+        root.style.right = "auto";
+      }
+      // Pill is smaller so it always fits where the expanded panel did,
+      // no clamp needed here.
+    } else {
+      // Width grows 220 → 340 over 320ms; the body height grows over the
+      // same window. Clamp once with the expected width so left/top can
+      // animate smoothly, then re-clamp after the transition settles
+      // because the final height depends on note count.
+      clampToViewport(EXPANDED_WIDTH);
+      setTimeout(() => clampToViewport(EXPANDED_WIDTH), 360);
     }
   };
 
@@ -576,10 +650,12 @@
 
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-  const clampToViewport = () => {
+  const clampToViewport = (assumedWidth) => {
     const rect = root.getBoundingClientRect();
-    const maxL = window.innerWidth  - rect.width  - 6;
-    const maxT = window.innerHeight - rect.height - 6;
+    const w = assumedWidth || rect.width;
+    const h = rect.height;
+    const maxL = window.innerWidth  - w - 6;
+    const maxT = window.innerHeight - h - 6;
     root.style.left  = `${clamp(rect.left, 6, Math.max(6, maxL))}px`;
     root.style.top   = `${clamp(rect.top,  6, Math.max(6, maxT))}px`;
     root.style.right = "auto";
@@ -753,6 +829,9 @@ Style and constraints:
 
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "VN_SUMMARY_CHUNK") {
+      // First chunk arriving means auth + request succeeded; clear any
+      // lingering needs-login state.
+      setEmptyMode("default");
       setAiState("done");
       renderSummary(message.text);
       return;
@@ -771,10 +850,13 @@ Style and constraints:
       ui.summarize.disabled = false;
       ui.summarizeLabel.textContent = t.summarize;
       setAiState("empty");
-      const msg = (message.error === "not_logged_in" || message.error === "auth_failed")
-        ? t.notLoggedIn
-        : t.summaryFailed;
-      setStatus(msg);
+      const isAuth = message.error === "not_logged_in" || message.error === "auth_failed";
+      if (isAuth) {
+        // Persistent UI instead of a 1.6s toast — the user needs to act on it.
+        setEmptyMode("needs-login");
+      } else {
+        setStatus(t.summaryFailed);
+      }
     }
   });
 
