@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh" data-lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>帧笺 FrameJian — 边看边笺，随帧成记</title>
+    <meta name="description" content="帧笺 FrameJian — a Chrome extension that brings the quiet practice of marginalia to every video you watch. Timestamped notes and AI summaries for YouTube and Bilibili." />
+    <meta property="og:title" content="帧笺 FrameJian" />
+    <meta property="og:description" content="边看边笺，随帧成记. Annotate the frames you watch." />
+    <meta property="og:image" content="./img/hero.png" />
+    <link rel="icon" type="image/png" href="./img/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topnav">
+      <a class="brand" href="#top">
+        <span class="brand-logo"><span class="brand-zhen">笺</span></span>
+        <span class="brand-name zh">帧笺</span>
+        <span class="brand-name en">FrameJian</span>
+      </a>
+      <nav class="topnav-r">
+        <button class="lang-toggle" id="lang-toggle" aria-label="Switch language">
+          <span class="zh">EN</span>
+          <span class="en">中</span>
+        </button>
+        <a class="github-link" href="https://github.com/jonlai211/FrameJian" target="_blank" rel="noreferrer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.41c.58.1.79-.25.79-.56 0-.28-.01-1.01-.02-1.99-3.21.7-3.89-1.55-3.89-1.55-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.09 0 4.43-2.71 5.41-5.28 5.69.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.13 0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <!-- ── Hero ────────────────────────────────────────────────── -->
+      <section class="hero">
+        <h1 class="hero-title">
+          <span class="zh">帧笺</span>
+          <span class="en">FrameJian</span>
+        </h1>
+        <p class="hero-tagline zh">边看边笺，随帧成记</p>
+        <p class="hero-tagline en">Annotate the frames you watch.</p>
+
+        <!-- ── Literary centerpiece ─────────────────────────────── -->
+        <div class="manifesto zh">
+          <p>「帧」是光阴一瞥，「笺」是心迹一痕。</p>
+          <p>古人于书页留笺，今人于光影成笺。</p>
+        </div>
+        <div class="manifesto en">
+          <p>A frame is a glimpse of time.</p>
+          <p>A <em>笺</em> <span class="pron">(jiān)</span> is the slip of paper a reader once used to annotate the books they loved.</p>
+          <p>FrameJian brings that quiet practice — marginalia — to every video you watch.</p>
+        </div>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/jonlai211/FrameJian" target="_blank" rel="noreferrer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.41c.58.1.79-.25.79-.56 0-.28-.01-1.01-.02-1.99-3.21.7-3.89-1.55-3.89-1.55-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.09 0 4.43-2.71 5.41-5.28 5.69.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.13 0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+            <span class="zh">在 GitHub 上获取</span>
+            <span class="en">Get it on GitHub</span>
+          </a>
+          <span class="cta-meta zh">Chrome 扩展 · YouTube 与 Bilibili · 无需 API key</span>
+          <span class="cta-meta en">Chrome extension · YouTube &amp; Bilibili · no API key</span>
+        </div>
+
+        <img class="hero-shot" src="./img/hero.png" alt="FrameJian overlay on a YouTube video with AI summary visible" />
+      </section>
+
+      <!-- ── Features ────────────────────────────────────────────── -->
+      <section class="features">
+        <h2 class="section-h">
+          <span class="zh">为什么是帧笺</span>
+          <span class="en">Why FrameJian</span>
+        </h2>
+
+        <div class="feat-grid">
+          <article class="feat-card">
+            <div class="feat-num">01</div>
+            <h3 class="zh">随帧落笺</h3>
+            <h3 class="en">Notes anchored to frames</h3>
+            <p class="zh">看到值得记的一瞬，<kbd>⌘</kbd> <kbd>↵</kbd> 一下，时间戳与文字同时落地。回头点一下时间戳，视频跳回那一帧。</p>
+            <p class="en">Press <kbd>⌘</kbd> <kbd>↵</kbd> and the moment is yours — text and timestamp captured together. Click any timestamp to seek the video back to that frame.</p>
+          </article>
+
+          <article class="feat-card">
+            <div class="feat-num">02</div>
+            <h3 class="zh">AI 摘要，免 API key</h3>
+            <h3 class="en">AI summary, no API key</h3>
+            <p class="zh">借你浏览器里登录好的 Gemini 会话，把整段视频化作带 <code>[MM:SS]</code> 时间戳跳转的结构化文章，流式渲染。</p>
+            <p class="en">FrameJian rides your existing Gemini session and streams a structured article with clickable <code>[MM:SS]</code> markers — markdown rendered in place.</p>
+          </article>
+
+          <article class="feat-card">
+            <div class="feat-num">03</div>
+            <h3 class="zh">玻璃浮层，不挡画面</h3>
+            <h3 class="en">A glass panel that gets out of the way</h3>
+            <p class="zh">全屏时仍在最上层，闲置时降到极淡。一键收成胶囊，只剩 logo 与当下时间。</p>
+            <p class="en">It floats above the player — even in fullscreen — fades when idle, and collapses to a corner pill showing just the logo and the current timestamp.</p>
+          </article>
+
+          <article class="feat-card">
+            <div class="feat-num">04</div>
+            <h3 class="zh">私有记录库</h3>
+            <h3 class="en">Your private library</h3>
+            <p class="zh">所有笔记与摘要随视频本地存储，可搜索、可导出 Markdown、可 JSON 备份与还原。无服务器，无账号。</p>
+            <p class="en">Notes and summaries live on your machine, per video. Search across everything, export to Markdown, or back up the lot as JSON. No server, no account.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ── Gallery ─────────────────────────────────────────────── -->
+      <section class="gallery">
+        <h2 class="section-h">
+          <span class="zh">几个使用瞬间</span>
+          <span class="en">A few moments of use</span>
+        </h2>
+
+        <div class="gallery-row">
+          <figure>
+            <img src="./img/notes-fullscreen.png" alt="Composing a note while watching a video in fullscreen" />
+            <figcaption class="zh">全屏播放时落笔</figcaption>
+            <figcaption class="en">Take notes mid-watch</figcaption>
+          </figure>
+          <figure>
+            <img src="./img/collapsed-pill.png" alt="The collapsed pill in the corner of a fullscreen video" />
+            <figcaption class="zh">收成角落里的小胶囊</figcaption>
+            <figcaption class="en">Tuck it into a corner pill</figcaption>
+          </figure>
+        </div>
+
+        <figure class="gallery-full">
+          <img src="./img/library.png" alt="The FrameJian library page with stats, search, and a video card" />
+          <figcaption class="zh">完整记录库 — 搜索、导出、备份</figcaption>
+          <figcaption class="en">The full library — search, export, back up</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── Install ─────────────────────────────────────────────── -->
+      <section class="install">
+        <h2 class="section-h">
+          <span class="zh">三步安装</span>
+          <span class="en">Three-step install</span>
+        </h2>
+
+        <ol class="steps">
+          <li>
+            <span class="step-n">1</span>
+            <div>
+              <h4 class="zh">克隆或下载仓库</h4>
+              <h4 class="en">Clone or download the repo</h4>
+              <p><code>git clone git@github.com:jonlai211/FrameJian.git</code></p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">2</span>
+            <div>
+              <h4 class="zh">打开扩展页，启用开发者模式</h4>
+              <h4 class="en">Open the extensions page, enable Developer mode</h4>
+              <p class="zh">浏览器地址栏访问 <code>chrome://extensions</code>，右上角打开 <strong>开发者模式</strong>。</p>
+              <p class="en">Visit <code>chrome://extensions</code> and toggle <strong>Developer mode</strong> on.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">3</span>
+            <div>
+              <h4 class="zh">加载已解压的扩展</h4>
+              <h4 class="en">Load unpacked</h4>
+              <p class="zh">点击 <strong>加载已解压的扩展程序</strong>，选中刚才克隆的项目目录。</p>
+              <p class="en">Click <strong>Load unpacked</strong> and select the folder you just cloned.</p>
+            </div>
+          </li>
+        </ol>
+
+        <p class="install-note zh">想使用 AI 摘要？请先在同一浏览器配置里登录 <a href="https://gemini.google.com" target="_blank" rel="noreferrer">gemini.google.com</a> — 帧笺不持有任何 API key，全程借你已登录的会话。</p>
+        <p class="install-note en">To use the AI summary, sign in to <a href="https://gemini.google.com" target="_blank" rel="noreferrer">gemini.google.com</a> in the same browser profile. FrameJian never holds an API key — it borrows your existing session.</p>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="brand-logo small"><span class="brand-zhen">笺</span></span>
+          <span>
+            <strong>帧笺 FrameJian</strong>
+            <span class="footer-tagline zh"> · 边看边笺，随帧成记</span>
+            <span class="footer-tagline en"> · Annotate the frames you watch</span>
+          </span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/jonlai211/FrameJian" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/jonlai211/FrameJian/blob/master/README.md" target="_blank" rel="noreferrer">README</a>
+          <a href="https://github.com/jonlai211/FrameJian/issues" target="_blank" rel="noreferrer">
+            <span class="zh">反馈</span>
+            <span class="en">Issues</span>
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
