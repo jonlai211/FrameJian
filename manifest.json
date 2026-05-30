@@ -33,7 +33,7 @@
         "https://youtu.be/*",
         "https://www.bilibili.com/*"
       ],
-      "js": ["src/content.js"],
+      "js": ["src/utils.js", "src/content.js"],
       "css": ["src/content.css"],
       "run_at": "document_idle"
     }

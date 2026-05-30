@@ -231,6 +231,60 @@ body {
   text-transform: uppercase;
 }
 
+/* Storage usage stat shows a thin progress bar instead of a giant number */
+.fj-stat.fj-stat-storage .fj-stat-num {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fj-stat-bar {
+  margin-top: 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fj-paper-2);
+  overflow: hidden;
+}
+
+.fj-stat-bar-fill {
+  height: 100%;
+  background: var(--fj-warm);
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+.fj-stat-bar-fill.warn  { background: #f0a040; }
+.fj-stat-bar-fill.crit  { background: #d63a3a; }
+
+/* Toast — slide in from top-right for import/quota messages */
+.fj-toast {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 1000;
+  background: var(--fj-paper-3);
+  border: 0.5px solid var(--fj-hair-s);
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 12.5px;
+  color: var(--fj-ink);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.fj-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.fj-toast.success { border-left: 3px solid var(--fj-warm); }
+.fj-toast.error   { border-left: 3px solid #d63a3a; color: #d63a3a; }
+
 /* ── Card list ──────────────────────────────────────────── */
 
 .fj-list {
@@ -770,3 +824,43 @@ body {
 }
 
 .fj-empty-sub { font-size: 13px; max-width: 360px; margin: 0 auto; line-height: 1.6; }
+
+/* ── Dark mode ──────────────────────────────────────────── */
+/* Follows the system preference (no in-app toggle yet). */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fj-ink:          #f0ede5;
+    --fj-ink-2:        #e8e4d8;
+    --fj-paper:        #16170f;
+    --fj-paper-2:      #1f201a;
+    --fj-paper-3:      #1c1d17;
+    --fj-muted:        #9a9890;
+    --fj-muted-2:      #6f6e68;
+    --fj-hair:         rgba(240, 237, 229, 0.08);
+    --fj-hair-s:       rgba(240, 237, 229, 0.18);
+    --fj-warm:         #ff7a5a;
+    --fj-warm-2:       #ff9a7a;
+    --fj-warm-soft:    rgba(255, 122, 90, 0.18);
+    --fj-warm-softer:  rgba(255, 122, 90, 0.07);
+    --fj-warm-deep:    #ff6644;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 122, 90, 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 0% 100%, rgba(255, 154, 122, 0.06), transparent 60%),
+      var(--fj-paper);
+  }
+
+  .fj-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  .fj-btn.primary:hover {
+    box-shadow: 0 6px 14px rgba(255, 122, 90, 0.40);
+  }
+
+  /* H2 inside summary already uses --fj-warm-deep; that token is brightened
+     above so it stays legible on the dark card background. */
+}

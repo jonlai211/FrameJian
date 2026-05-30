@@ -4,72 +4,54 @@
 
   const STRINGS = {
     en: {
-      title: "FrameJian",
-      collapse: "Collapse",
-      expand: "Expand",
-      tabNotes: "Notes",
-      tabAi: "AI Summary",
-      aiTitle: "AI Summary",
-      aiSubtext: "Gemini reads the video and generates a structured summary with timestamps.",
-      save: "Save",
-      copyAll: "Copy all",
-      export: "Export",
-      manage: "Manage",
-      empty: "No notes yet — start typing.",
-      write: "Note this moment…",
-      jump: "Jump",
-      copy: "Copy",
-      edit: "Edit",
-      delete: "Delete",
-      saved: "Saved",
-      updated: "Updated",
-      copied: "Copied",
-      exported: "Exported",
-      needText: "Write something first.",
-      openFailed: "Open failed",
-      missingVideo: "Video not found yet",
-      summarize: "Summarize with AI",
-      summarizing: "Summarizing…",
-      noTranscript: "YouTube only",
+      ...FJ_STRINGS_COMMON.en,
+      title:         "FrameJian",
+      collapse:      "Collapse",
+      expand:        "Expand",
+      tabNotes:      "Notes",
+      tabAi:         "AI Summary",
+      aiTitle:       "AI Summary",
+      aiSubtext:     "Gemini reads the video and generates a structured summary with timestamps.",
+      empty:         "No notes yet — start typing.",
+      write:         "Note this moment…",
+      jump:          "Jump",
+      saved:         "Saved",
+      updated:       "Updated",
+      exported:      "Exported",
+      needText:      "Write something first.",
+      openFailed:    "Open failed",
+      summarize:     "Summarize with AI",
+      summarizing:   "Summarizing…",
+      noTranscript:  "YouTube only",
       summaryFailed: "Summary failed",
-      summaryDone: "Done",
-      notLoggedIn: "Log in to gemini.google.com first",
-      regenSummary: "Regenerate",
-      cancel: "Cancel",
+      summaryDone:   "Done",
+      notLoggedIn:   "Log in to gemini.google.com first",
+      regenSummary:  "Regenerate",
     },
     zh: {
-      title: "帧笺",
-      collapse: "收起",
-      expand: "展开",
-      tabNotes: "笔记",
-      tabAi: "AI 摘要",
-      aiTitle: "AI 摘要",
-      aiSubtext: "Gemini 会读取视频内容，生成带时间戳的结构化摘要。",
-      save: "保存",
-      copyAll: "复制全部",
-      export: "导出",
-      manage: "管理",
-      empty: "还没有记录 — 开始输入吧。",
-      write: "在此处记下这一帧…",
-      jump: "跳转",
-      copy: "复制",
-      edit: "编辑",
-      delete: "删除",
-      saved: "已保存",
-      updated: "已更新",
-      copied: "已复制",
-      exported: "已导出",
-      needText: "先写点内容吧。",
-      openFailed: "打开失败",
-      missingVideo: "未检测到视频",
-      summarize: "AI 总结",
-      summarizing: "总结中…",
-      noTranscript: "仅支持 YouTube",
+      ...FJ_STRINGS_COMMON.zh,
+      title:         "帧笺",
+      collapse:      "收起",
+      expand:        "展开",
+      tabNotes:      "笔记",
+      tabAi:         "AI 摘要",
+      aiTitle:       "AI 摘要",
+      aiSubtext:     "Gemini 会读取视频内容，生成带时间戳的结构化摘要。",
+      empty:         "还没有记录 — 开始输入吧。",
+      write:         "在此处记下这一帧…",
+      jump:          "跳转",
+      saved:         "已保存",
+      updated:       "已更新",
+      exported:      "已导出",
+      needText:      "先写点内容吧。",
+      openFailed:    "打开失败",
+      summarize:     "AI 总结",
+      summarizing:   "总结中…",
+      noTranscript:  "仅支持 YouTube",
       summaryFailed: "总结失败",
-      summaryDone: "完成",
-      notLoggedIn: "请先登录 gemini.google.com",
-      regenSummary: "重新生成",
-      cancel: "取消",
+      summaryDone:   "完成",
+      notLoggedIn:   "请先登录 gemini.google.com",
+      regenSummary:  "重新生成",
     },
   };
 
@@ -281,14 +263,7 @@
 
   // ── Helpers ───────────────────────────────────────────────
 
-  const formatTime = (seconds) => {
-    const total = Math.max(0, Math.floor(seconds || 0));
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    const hh = h > 0 ? String(h).padStart(2, "0") + ":" : "";
-    return `${hh}${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  };
+  const formatTime = fjFormatTime;
 
   const getPlatform = () => {
     if (location.hostname.includes("youtube.com") || location.hostname.includes("youtu.be")) return "youtube";
@@ -359,9 +334,6 @@
     });
   };
 
-  // Kept for backwards compatibility with existing callers
-  const loadNotes = loadPayload;
-
   const savePayload = async () => {
     return new Promise((resolve) => {
       const data = {
@@ -376,11 +348,18 @@
       if (summaryText) {
         data.summary = { text: summaryText, updatedAt: summaryUpdatedAt || Date.now() };
       }
-      chrome.storage.local.set({ [storageKey()]: data }, resolve);
+      chrome.storage.local.set({ [storageKey()]: data }, () => {
+        if (chrome.runtime.lastError) {
+          // Most likely cause: hitting the 10 MB quota. Tell the user.
+          const msg = locale === "en"
+            ? "Save failed — storage may be full. Open library to back up."
+            : "保存失败 — 存储可能已满，请打开记录库备份。";
+          setStatus(msg);
+        }
+        resolve();
+      });
     });
   };
-
-  const saveNotes = savePayload;
 
   // ── Render notes ──────────────────────────────────────────
 
@@ -457,7 +436,7 @@
 
           const saveBtn = mkBtn(t.save, "primary", async () => {
             const val = editor.value.trim();
-            if (val) { note.text = val; await saveNotes(); }
+            if (val) { note.text = val; await savePayload(); }
             renderNotes();
             setStatus(t.updated);
           });
@@ -475,7 +454,7 @@
 
         acts.appendChild(mkBtn(t.delete, "danger", async () => {
           notes.splice(idx, 1);
-          await saveNotes();
+          await savePayload();
           renderNotes();
         }));
 
@@ -662,7 +641,7 @@
     if (!text) { setStatus(t.needText); return; }
     notes.unshift({ t: videoEl ? videoEl.currentTime : 0, text, createdAt: Date.now() });
     ui.input.value = "";
-    await saveNotes();
+    await savePayload();
     renderNotes();
     setStatus(t.saved);
   });
@@ -702,116 +681,25 @@ Style and constraints:
 - When referencing specific moments from the video, include the timestamp in [MM:SS] format.
 - Answer in {language}`;
 
-  // Minimal markdown renderer (mirrors options.js — headings, bold/italic,
-  // inline & fenced code, lists, blockquotes, links, hr). Input is HTML-escaped
-  // first; timestamp tokens like [12:34] are left as plain text and converted
-  // to clickable buttons in a post-processing step.
-  const _esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  const _renderInline = (s) => s
-    .replace(/`([^`\n]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>")
-    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
-
-  const renderMarkdown = (raw) => {
-    let text = _esc(raw);
-    const codeBlocks = [];
-    text = text.replace(/```([a-z0-9]*)\n?([\s\S]*?)```/gi, (_m, _lang, code) => {
-      const i = codeBlocks.length;
-      codeBlocks.push(`<pre><code>${code.replace(/\n$/, "")}</code></pre>`);
-      return `\x00CB${i}\x00`;
+  // Overlay-side timestamp link: clicking seeks the local video element.
+  const makeOverlayTsLink = (secs, label) => {
+    const btn = document.createElement("button");
+    btn.className   = "vn-ts-link";
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      if (videoEl) { videoEl.currentTime = secs; videoEl.play().catch(() => {}); }
     });
-
-    const lines = text.split(/\r?\n/);
-    const out = [];
-    let listType = null;
-    let inBlockquote = false;
-    let paragraphBuf = [];
-    const flushP = () => { if (paragraphBuf.length) { out.push(`<p>${paragraphBuf.join("<br>")}</p>`); paragraphBuf = []; } };
-    const closeList = () => { if (listType) { out.push(`</${listType}>`); listType = null; } };
-    const closeBq = () => { if (inBlockquote) { out.push("</blockquote>"); inBlockquote = false; } };
-
-    for (const raw2 of lines) {
-      const line = raw2.trimEnd();
-      if (!line.trim()) { flushP(); closeList(); closeBq(); continue; }
-      if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(line.trim())) { flushP(); closeList(); closeBq(); out.push("<hr>"); continue; }
-      const h = line.match(/^(#{1,6})\s+(.*)$/);
-      if (h) { flushP(); closeList(); closeBq(); out.push(`<h${h[1].length}>${_renderInline(h[2].trim())}</h${h[1].length}>`); continue; }
-      if (line.startsWith("&gt; ") || line.startsWith("> ")) {
-        flushP(); closeList();
-        if (!inBlockquote) { out.push("<blockquote>"); inBlockquote = true; }
-        out.push(`<p>${_renderInline(line.replace(/^(&gt;|>)\s+/, ""))}</p>`);
-        continue;
-      }
-      closeBq();
-      const ul = line.match(/^\s*[-*+]\s+(.*)$/);
-      if (ul) { flushP(); if (listType !== "ul") { closeList(); out.push("<ul>"); listType = "ul"; } out.push(`<li>${_renderInline(ul[1])}</li>`); continue; }
-      const ol = line.match(/^\s*\d+\.\s+(.*)$/);
-      if (ol) { flushP(); if (listType !== "ol") { closeList(); out.push("<ol>"); listType = "ol"; } out.push(`<li>${_renderInline(ol[1])}</li>`); continue; }
-      closeList();
-      paragraphBuf.push(_renderInline(line));
-    }
-    flushP(); closeList(); closeBq();
-
-    let html = out.join("\n");
-    html = html.replace(/\x00CB(\d+)\x00/g, (_m, i) => codeBlocks[Number(i)]);
-    return html;
+    return btn;
   };
-
-  // Walk rendered DOM, swap [MM:SS] text patterns with click-to-seek buttons.
-  const linkifyTimestampsInOverlay = (root) => {
-    const tsRE = /\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: (n) => tsRE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
-    });
-    const targets = [];
-    let cur;
-    while ((cur = walker.nextNode())) targets.push(cur);
-
-    targets.forEach((textNode) => {
-      tsRE.lastIndex = 0;
-      const parent = textNode.parentNode;
-      const value  = textNode.nodeValue;
-      const frag   = document.createDocumentFragment();
-      let lastIdx  = 0;
-      let m;
-      while ((m = tsRE.exec(value)) !== null) {
-        if (m.index > lastIdx) frag.appendChild(document.createTextNode(value.slice(lastIdx, m.index)));
-        const secs = m[3] !== undefined
-          ? +m[1] * 3600 + +m[2] * 60 + +m[3]
-          : +m[1] * 60 + +m[2];
-        const btn = document.createElement("button");
-        btn.className   = "vn-ts-link";
-        btn.textContent = m[0];
-        btn.addEventListener("click", () => {
-          if (videoEl) { videoEl.currentTime = secs; videoEl.play().catch(() => {}); }
-        });
-        frag.appendChild(btn);
-        lastIdx = m.index + m[0].length;
-      }
-      if (lastIdx < value.length) frag.appendChild(document.createTextNode(value.slice(lastIdx)));
-      parent.replaceChild(frag, textNode);
-    });
-  };
-
-  // Gemini's streaming response sometimes appends an internal conversation
-  // link (http://googleusercontent.com/lmdx_content/<long-hash>) to the
-  // summary text. Strip any trailing instance so it never reaches storage
-  // or the UI. Stripping mid-stream is fine — partial URLs match the same
-  // pattern, so the noise stays out the whole time.
-  const cleanSummaryText = (text) => (text || "")
-    .replace(/\s*https?:\/\/googleusercontent\.com\/lmdx_content\/\S+\s*$/i, "")
-    .trim();
 
   const renderSummary = (text) => {
-    const cleaned = cleanSummaryText(text);
+    const cleaned = fjCleanSummaryText(text);
     summaryText = cleaned;
     ui.summary.innerHTML = "";
     if (!cleaned) { ui.summary.classList.remove("vn-summary-visible"); return; }
     ui.summary.classList.add("vn-summary-visible");
-    ui.summary.innerHTML = renderMarkdown(cleaned);
-    linkifyTimestampsInOverlay(ui.summary);
+    ui.summary.innerHTML = fjRenderMarkdown(cleaned);
+    fjLinkifyTimestamps(ui.summary, makeOverlayTsLink);
   };
 
   const startSummarize = () => {
