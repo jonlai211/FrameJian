@@ -1,10 +1,30 @@
+<div align="center">
+
+<img src="icons/icon128.png" alt="FrameJian" width="92" height="92" />
+
 # 帧笺 FrameJian
 
-> 边看边笺，随帧成记 — A Chrome extension for timestamped notes and AI summaries on YouTube and Bilibili.
+**边看边笺，随帧成记** — Annotate the frames you watch.
 
-FrameJian floats a frosted-glass panel over the video page so you can capture
-moments as you watch, then turn the whole video into a structured AI summary
-with clickable timestamps that jump back to the exact frame.
+A Chrome extension that floats a frosted-glass panel over YouTube and Bilibili
+so you can capture moments as you watch, then turn the whole video into a
+structured AI summary with clickable timestamps that jump back to the exact frame.
+
+<p>
+  <a href="https://jonlai211.github.io/FrameJian/">
+    <img src="https://img.shields.io/badge/%E2%9C%A6_Website-FrameJian-ff5a3c?style=for-the-badge&labelColor=1a1a1a" alt="Website" />
+  </a>
+  <a href="https://github.com/jonlai211/FrameJian">
+    <img src="https://img.shields.io/badge/GitHub-Source-1a1a1a?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-ff8a5a?style=for-the-badge&labelColor=1a1a1a" alt="MIT License" />
+  </a>
+</p>
+
+<sub>Chrome MV3 · YouTube &amp; Bilibili · No API key · EN / 中</sub>
+
+</div>
 
 ![FrameJian overlay on a YouTube video — AI summary tab with rendered markdown](assets/screenshots/hero.png)
 
@@ -116,4 +136,4 @@ Serif SC + JetBrains Mono typography, frosted-glass surfaces.
 
 ## License
 
-Not yet decided.
+MIT — see [LICENSE](LICENSE).
