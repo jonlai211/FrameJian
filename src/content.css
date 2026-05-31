@@ -20,7 +20,7 @@
 
 #vn-root {
   --vn-width-expanded:  340px;
-  --vn-width-collapsed: 130px;
+  --vn-width-collapsed: 122px;
   --vn-ease:            cubic-bezier(0.32, 0.72, 0, 1);
 
   position: fixed;
@@ -125,7 +125,8 @@
 }
 
 #vn-root.vn-collapsed #vn-header {
-  padding: 9px 16px;
+  gap: 0;
+  padding: 9px 14px;
   border-bottom-color: transparent;
   cursor: pointer;
 }
@@ -210,9 +211,9 @@
 }
 
 #vn-root.vn-collapsed #vn-time-pill {
-  max-width: 80px;
+  max-width: 90px;
   opacity: 1;
-  margin-left: 4px;
+  margin-left: 8px;
   transition:
     max-width   240ms var(--vn-ease) 100ms,
     opacity     180ms ease 140ms,
